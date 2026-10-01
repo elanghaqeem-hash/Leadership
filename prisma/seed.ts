@@ -19,12 +19,12 @@ async function upsertGlobalContent(input: {code:string;type:string;title:string;
 }
 
 
-function rowsAfterGameHeading(needle: string) {
+function rowsAfterSectionHeading(needle: string, headerFirstCell: string) {
   const rows = seed.gameCardsRaw?.rows as unknown[][];
   const heading = rows.findIndex((row) => String(row?.[0] ?? '').includes(needle));
   if (heading < 0) throw new Error(`Game cards section not found: ${needle}`);
   let i = heading + 1;
-  while (i < rows.length && String(rows[i]?.[0] ?? '').toLowerCase() !== 'no') i += 1;
+  while (i < rows.length && String(rows[i]?.[0] ?? '').toLowerCase() !== headerFirstCell.toLowerCase()) i += 1;
   i += 1;
   const out: unknown[][] = [];
   while (i < rows.length && rows[i]?.[0] != null && String(rows[i][0]).trim() !== '') {
@@ -32,6 +32,10 @@ function rowsAfterGameHeading(needle: string) {
     i += 1;
   }
   return out;
+}
+
+function rowsAfterGameHeading(needle: string) {
+  return rowsAfterSectionHeading(needle, 'No');
 }
 
 function splitLabeledOptions(text: string) {
@@ -76,7 +80,16 @@ function structuredGameContent() {
     additionalData: String(r[3] ?? ''),
   }));
 
-  return { mirrorCards, pokerCards, factCards };
+  const warInitialRows = rowsAfterSectionHeading('War Room — kartu kondisi awal', 'No');
+  const warInitial = warInitialRows.map((r) => ({ no:Number(r[0]), condition:String(r[1] ?? '') }));
+  const warEventRows = rowsAfterSectionHeading('War Room — event card', 'Event');
+  const warEvents = warEventRows.map((r) => ({
+    no:Number(r[0]),
+    event:String(r[1] ?? ''),
+    observerFocus:String(r[2] ?? ''),
+  }));
+
+  return { mirrorCards, pokerCards, factCards, warInitial, warEvents };
 }
 
 async function main() {
@@ -123,7 +136,13 @@ async function main() {
   content.push(await upsertGlobalContent({code:'SELF_DIAGNOSTIC_V1',type:'SELF_DIAGNOSTIC',title:'Self-Diagnostic',payload:seed.selfDiagnostic}));
   content.push(await upsertGlobalContent({code:'PRIORITY_SCORECARD_V1',type:'TOOL_CONFIG',title:'Priority Scorecard',payload:seed.priorityScorecard}));
   content.push(await upsertGlobalContent({code:'WEEKLY_PLANNER_V1',type:'TOOL_CONFIG',title:'Weekly Planner',payload:seed.weeklyPlanner}));
-  content.push(await upsertGlobalContent({code:'ARENA_EVENTS_V1',type:'GAME_CARDS',title:'Banking Leadership Arena',payload:{events:seed.arena.events},answerKey:{events:seed.arena.events.map((x:any)=>({no:x.no,best:x.best,acceptable:x.acceptable}))}}));
+  content.push(await upsertGlobalContent({
+    code:'ARENA_EVENTS_V1',
+    type:'LIVE_GAME',
+    title:'Banking Leadership Arena',
+    payload:{events:seed.arena.events.map((x:any)=>({no:x.no,event:x.event,dimension:x.dimension,doMinutes:x.doMinutes}))},
+    answerKey:{events:seed.arena.events.map((x:any)=>({no:x.no,best:x.best,acceptable:x.acceptable}))},
+  }));
   content.push(await upsertGlobalContent({code:'DECISION_AUCTION_V1',type:'GAME_CARDS',title:'Decision Auction',payload:seed.decisionAuction}));
   content.push(await upsertGlobalContent({code:'GAME_CARDS_EXCEL_V1',type:'GAME_CARDS_RAW',title:'Kartu Game dari Excel',payload:seed.gameCardsRaw}));
   content.push(await upsertGlobalContent({
@@ -145,6 +164,17 @@ async function main() {
     title:'Fact or Fiction',
     payload:{cards:gameContent.factCards.map(({answer,additionalData,...card})=>card)},
     answerKey:{cards:gameContent.factCards.map(({no,answer,additionalData})=>({no,answer,additionalData}))},
+  }));
+  content.push(await upsertGlobalContent({
+    code:'WAR_ROOM_SCENARIO_V1',
+    type:'TEAM_SIMULATION',
+    title:'Leadership War Room',
+    payload:{
+      initialConditions:gameContent.warInitial,
+      events:gameContent.warEvents.map(({observerFocus,...event})=>event),
+      boardColumns:['Priority','Decision','Delegation','Escalation','Communication','Action'],
+    },
+    answerKey:{events:gameContent.warEvents.map(({no,observerFocus})=>({no,observerFocus}))},
   }));
   content.push(await upsertGlobalContent({code:'MANAGER_FOLLOWUP_V1',type:'FOLLOW_UP_CONFIG',title:'Manager Follow-up',payload:seed.managerFollowUp}));
   content.push(await upsertGlobalContent({code:'IMPACT_METRICS_V1',type:'IMPACT_CONFIG',title:'Impact Metrics',payload:seed.impactMetrics}));
