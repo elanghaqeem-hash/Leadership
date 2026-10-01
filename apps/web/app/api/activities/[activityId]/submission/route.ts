@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from '@ltw/db';
 import { actionTrackerSummary, evaluatePlannerBuffer, evaluatePlannerFocus, scorePriority, validateRaciRow } from '@ltw/scoring';
+import { buildSbiFeedback, rankDecisionMatrix, scoreMeetingChecklist, summarizeMinuteAudit, summarizePreMortem } from '@ltw/activities';
 import { assertPermission, requireUser } from '@/lib/auth';
 import { jsonError } from '@/lib/http';
 
@@ -226,27 +227,14 @@ export async function POST(req: Request, { params }: { params: Promise<{ activit
       scoreDetail = summary as Prisma.InputJsonValue;
         } else if (activity.type === 'MINUTE_AUDIT') {
       const parsed = minuteAuditSchema.parse(payload);
-      const totalMinutes = parsed.items.reduce((sum, item) => sum + item.durationMin, 0);
       normalized = parsed;
-      scoreDetail = {
-        totalMinutes,
-        remainingMinutes: 480 - totalMinutes,
-        status: totalMinutes > 480 ? 'OVER_480' : totalMinutes === 480 ? 'BALANCED_480' : 'UNDER_480',
-        byCategory: Object.fromEntries(
-          [...new Set(parsed.items.map((x) => x.category))].map((category) => [
-            category,
-            parsed.items.filter((x) => x.category === category).reduce((sum, x) => sum + x.durationMin, 0),
-          ]),
-        ),
-      } as Prisma.InputJsonValue;
+      scoreDetail = summarizeMinuteAudit(parsed.items) as Prisma.InputJsonValue;
     } else if (activity.type === 'DAILY_BIG_3') {
       normalized = dailyBig3Schema.parse(payload);
     } else if (activity.type === 'MEETING_CHECKLIST') {
       const parsed = meetingSchema.parse(payload);
-      const signals = [parsed.decisionRequired, parsed.rightParticipants, parsed.preReadReady, parsed.timeboxed, !parsed.canBeAsync];
-      const goScore = signals.filter(Boolean).length;
       normalized = parsed;
-      scoreDetail = { goScore, recommendation: goScore >= 4 ? 'GO' : 'NO_GO_OR_REDESIGN' };
+      scoreDetail = scoreMeetingChecklist(parsed);
     } else if (activity.type === 'DELEGATION_CONTRACT') {
       normalized = delegationSchema.parse(payload);
     } else if (activity.type === 'RACI_BUILDER') {
@@ -265,9 +253,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ activit
     } else if (activity.type === 'SBI_FEEDBACK') {
       const parsed = sbiSchema.parse(payload);
       normalized = parsed;
-      scoreDetail = {
-        generatedFeedback: `Pada ${parsed.situation}, ketika ${parsed.behavior}, dampaknya ${parsed.impact}. Ke depan, ${parsed.nextStep}.`,
-      };
+      scoreDetail = { generatedFeedback: buildSbiFeedback(parsed) };
     } else if (activity.type === 'FACT_ASSUMPTION_OPINION_UNKNOWN') {
       normalized = factSchema.parse(payload);
     } else if (activity.type === 'FIVE_WHYS') {
@@ -282,17 +268,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ activit
       scoreDetail = { flaggedCount: parsed.checks.filter((x) => x.flagged).length };
     } else if (activity.type === 'DECISION_MATRIX') {
       const parsed = decisionMatrixSchema.parse(payload);
-      const totalWeight = parsed.criteria.reduce((sum, item) => sum + item.weight, 0);
-      const results = parsed.options.map((option) => ({
-        name: option.name,
-        weightedScore: option.scores.reduce((sum, value, idx) => sum + value * parsed.criteria[idx].weight, 0) / totalWeight,
-      })).sort((a, b) => b.weightedScore - a.weightedScore);
       normalized = parsed;
-      scoreDetail = { ranking: results.map((x, idx) => ({ rank: idx + 1, ...x })), reversibility: parsed.reversibility } as Prisma.InputJsonValue;
+      scoreDetail = { ranking: rankDecisionMatrix(parsed.criteria, parsed.options), reversibility: parsed.reversibility } as Prisma.InputJsonValue;
     } else if (activity.type === 'PRE_MORTEM') {
       const parsed = preMortemSchema.parse(payload);
       normalized = parsed;
-      scoreDetail = { risks: parsed.items.map((x) => ({ failure: x.failure, riskScore: x.likelihood * x.impact })) } as Prisma.InputJsonValue;
+      scoreDetail = { risks: summarizePreMortem(parsed.items) } as Prisma.InputJsonValue;
     } else if (activity.type === 'DECISION_LOG') {
       normalized = decisionLogSchema.parse(payload);
     } else if (activity.type === 'ACTION_TRACKER') {
