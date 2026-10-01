@@ -80,6 +80,9 @@ function structuredGameContent() {
     additionalData: String(r[3] ?? ''),
   }));
 
+  const boardRows = rowsAfterSectionHeading('Game 11 · 60-Second Boardroom', 'Kasus');
+  const boardCases = boardRows.map((r,idx) => ({ no:idx+1, label:String(r[0] ?? ''), brief:String(r[1] ?? '') }));
+
   const warInitialRows = rowsAfterSectionHeading('War Room — kartu kondisi awal', 'No');
   const warInitial = warInitialRows.map((r) => ({ no:Number(r[0]), condition:String(r[1] ?? '') }));
   const warEventRows = rowsAfterSectionHeading('War Room — event card', 'Event');
@@ -89,7 +92,7 @@ function structuredGameContent() {
     observerFocus:String(r[2] ?? ''),
   }));
 
-  return { mirrorCards, pokerCards, factCards, warInitial, warEvents };
+  return { mirrorCards, pokerCards, factCards, boardCases, warInitial, warEvents };
 }
 
 async function main() {
@@ -180,6 +183,12 @@ async function main() {
     title:'Fact or Fiction',
     payload:{cards:gameContent.factCards.map(({answer,additionalData,...card})=>card)},
     answerKey:{cards:gameContent.factCards.map(({no,answer,additionalData})=>({no,answer,additionalData}))},
+  }));
+  content.push(await upsertGlobalContent({
+    code:'BOARDROOM_CASES_V1',
+    type:'LIVE_GAME',
+    title:'60-Second Boardroom Cases',
+    payload:{cases:gameContent.boardCases,timerSec:60},
   }));
   content.push(await upsertGlobalContent({
     code:'WAR_ROOM_SCENARIO_V1',
