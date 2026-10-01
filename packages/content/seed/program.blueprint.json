@@ -46,7 +46,8 @@
           "type": "LEADERSHIP_MIRROR",
           "title": "G1 Leadership Mirror",
           "config": {
-            "game": "G1"
+            "game": "G1",
+            "gameContentCode": "LEADERSHIP_MIRROR_V1"
           },
           "initialStatus": "DRAFT"
         }
@@ -86,7 +87,8 @@
           "type": "PRIORITY_POKER",
           "title": "G3 Priority Poker",
           "config": {
-            "game": "G3"
+            "game": "G3",
+            "gameContentCode": "PRIORITY_POKER_V1"
           },
           "initialStatus": "DRAFT"
         }
@@ -232,7 +234,8 @@
           "type": "FACT_OR_FICTION",
           "title": "G6 Fact or Fiction",
           "config": {
-            "game": "G6"
+            "game": "G6",
+            "gameContentCode": "FACT_OR_FICTION_V1"
           },
           "initialStatus": "DRAFT"
         }
