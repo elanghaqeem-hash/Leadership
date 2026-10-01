@@ -2,7 +2,10 @@
   "name": "leadership-that-works",
   "private": true,
   "type": "module",
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "npm --workspace @ltw/web run dev",
     "build": "npm --workspace @ltw/web run build",
@@ -17,7 +20,9 @@
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:push": "prisma db push --skip-generate",
+    "test:sprint1:db": "node scripts/sprint1-smoke.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.16.2",
