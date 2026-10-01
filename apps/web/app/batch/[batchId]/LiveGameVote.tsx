@@ -18,6 +18,7 @@ function promptFor(feed:LiveFeed){
   if(feed.activity.type==='LEADERSHIP_MIRROR')return feed.card.situation||'';
   if(feed.activity.type==='PRIORITY_POKER')return feed.card.prompt||'';
   if(feed.activity.type==='FACT_OR_FICTION')return feed.card.statement||'';
+  if(feed.activity.type==='BIAS_TRAP')return feed.card.prompt||'';
   return '';
 }
 
@@ -46,6 +47,7 @@ export default function LiveGameVote({activityId}:{activityId:string}){
       {feed.choices.map(choice=>{const n=feed.aggregate?.[choice]??0;return <div key={choice}><div className="flex justify-between text-sm"><span>{choice}</span><b>{n}</b></div><div className="mt-1 h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full bg-teal" style={{width:`${Math.round(n/maxCount*100)}%`}}/></div></div>})}
       {feed.answer?.expected&&<div className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-900"><b>Expected:</b> {String(feed.answer.expected)}</div>}
       {feed.answer?.additionalData&&<div className="rounded-xl bg-sky-50 p-3 text-sm text-sky-900"><b>Data tambahan:</b> {String(feed.answer.additionalData)}</div>}
+      {feed.answer?.betterQuestion&&<div className="rounded-xl bg-sky-50 p-3 text-sm text-sky-900"><b>Better question:</b> {String(feed.answer.betterQuestion)}</div>}
    </div>}
    {error&&<div role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</div>}
  </div>
