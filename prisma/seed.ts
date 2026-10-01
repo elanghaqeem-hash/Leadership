@@ -91,6 +91,12 @@ function structuredGameContent() {
     additionalData: String(r[3] ?? ''),
   }));
 
+  const biasTrapRows = rowsAfterGameHeading('Game 9 · Bias Trap');
+  const biasTrapCards = biasTrapRows.map((r)=>({
+    no:Number(r[0]), prompt:String(r[1]??''), bias:String(r[2]??''), betterQuestion:String(r[3]??''),
+  }));
+  const biasTrapChoices = [...new Set(biasTrapCards.map((x)=>x.bias))];
+
   const boardRows = rowsAfterSectionHeading('Game 11 · 60-Second Boardroom', 'Kasus');
   const boardCases = boardRows.map((r,idx) => ({ no:idx+1, label:String(r[0] ?? ''), brief:String(r[1] ?? '') }));
 
@@ -103,7 +109,7 @@ function structuredGameContent() {
     observerFocus:String(r[2] ?? ''),
   }));
 
-  return { mirrorCards, pokerCards, calendarBase, calendarDisruptions, delegationRelay, factCards, boardCases, warInitial, warEvents };
+  return { mirrorCards, pokerCards, calendarBase, calendarDisruptions, delegationRelay, factCards, biasTrapCards, biasTrapChoices, boardCases, warInitial, warEvents };
 }
 
 async function main() {
@@ -212,6 +218,13 @@ async function main() {
     title:'Fact or Fiction',
     payload:{cards:gameContent.factCards.map(({answer,additionalData,...card})=>card)},
     answerKey:{cards:gameContent.factCards.map(({no,answer,additionalData})=>({no,answer,additionalData}))},
+  }));
+  content.push(await upsertGlobalContent({
+    code:'BIAS_TRAP_V1',
+    type:'LIVE_GAME',
+    title:'Bias Trap',
+    payload:{cards:gameContent.biasTrapCards.map(({bias,betterQuestion,...card})=>card),choices:gameContent.biasTrapChoices},
+    answerKey:{cards:gameContent.biasTrapCards.map(({no,bias,betterQuestion})=>({no,bias,betterQuestion}))},
   }));
   content.push(await upsertGlobalContent({
     code:'BOARDROOM_CASES_V1',
