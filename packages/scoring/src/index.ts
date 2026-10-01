@@ -11,6 +11,8 @@ import type {
   PriorityWeights,
 } from './types.js';
 
+export type { AuctionProgram, AuctionRound } from './types.js';
+
 /**
  * Excel source of truth:
  * source/Leadership_That_Works_Toolkit.xlsx
