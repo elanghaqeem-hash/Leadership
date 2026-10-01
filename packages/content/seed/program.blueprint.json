@@ -161,7 +161,9 @@
           "type": "DELEGATION_RELAY",
           "title": "G5 Delegation Relay",
           "config": {
-            "game": "G5"
+            "game": "G5",
+            "contentCode": "DELEGATION_RELAY_V1",
+            "timerSec": 1200
           },
           "initialStatus": "DRAFT"
         }
