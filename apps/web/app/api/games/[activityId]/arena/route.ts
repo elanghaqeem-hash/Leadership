@@ -5,6 +5,7 @@ import { prisma } from '@ltw/db';
 import { scoreArena, scoreArenaEvent, type ArenaDecision, type ArenaDimension } from '@ltw/scoring';
 import { assertPermission, requireUser } from '@/lib/auth';
 import { HttpError, jsonError } from '@/lib/http';
+import { publishBatchEvent } from '@/lib/realtime';
 
 const decisionSchema=z.object({decision:z.enum(['Do','Delegate','Escalate','Defer'])});
 const controlSchema=z.object({command:z.enum(['START','REVEAL','CLOSE']),eventNo:z.number().int().min(1).max(20).optional()});
@@ -148,6 +149,7 @@ export async function POST(req:Request,{params}:{params:Promise<{activityId:stri
    },
    update:{userId:user.id,payload:payload as Prisma.InputJsonValue,submittedAt:new Date(),version:{increment:1}},
   });
+  publishBatchEvent(activity.batchId, 'GAME_STATE', activity.id);
   return NextResponse.json({ok:true,decision});
  }catch(e){return jsonError(e)}
 }
@@ -176,7 +178,8 @@ export async function PATCH(req:Request,{params}:{params:Promise<{activityId:str
     actorUserId:actor.id,tenantId:activity.tenantId,batchId:activity.batchId,action:'OPEN_ACTIVITY',
     resourceType:'ArenaRound',resourceId:row.id,metadata:{eventNo,roundNo},
    }});
-   return NextResponse.json({ok:true,round:row});
+   publishBatchEvent(activity.batchId, 'GAME_STATE', activity.id);
+  return NextResponse.json({ok:true,round:row});
   }
 
   if(!latest||!latestState)throw new HttpError('Belum ada event aktif',409);
@@ -190,6 +193,7 @@ export async function PATCH(req:Request,{params}:{params:Promise<{activityId:str
    action:input.command==='REVEAL'?'REVEAL_KEY':'UPDATE',resourceType:'ArenaRound',resourceId:latest.id,
    metadata:{eventNo:latestState.eventNo,roundNo:latest.roundNo,command:input.command},
   }});
+  publishBatchEvent(activity.batchId, 'GAME_STATE', activity.id);
   return NextResponse.json({ok:true,round:row});
  }catch(e){return jsonError(e)}
 }
