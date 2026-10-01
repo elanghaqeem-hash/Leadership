@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { prisma } from '@ltw/db';
 import { assertPermission, requireUser } from '@/lib/auth';
 import { HttpError, jsonError } from '@/lib/http';
+import { publishBatchEvent } from '@/lib/realtime';
 
 const days=['Senin','Selasa','Rabu','Kamis','Jumat'] as const;
 const scheduleSchema=z.object({
@@ -79,6 +80,7 @@ export async function POST(req:Request,{params}:{params:Promise<{activityId:stri
    create:{tenantId:activity.tenantId,batchId:activity.batchId,activityId,ownerType:'TEAM',teamId:membership.teamId,userId:user.id,submissionKey,payload:data as Prisma.InputJsonValue,submittedAt:new Date()},
    update:{userId:user.id,payload:data as Prisma.InputJsonValue,submittedAt:new Date(),version:{increment:1}},
   });
+  publishBatchEvent(activity.batchId, 'GAME_STATE', activity.id);
   return NextResponse.json({ok:true,version:saved.version});
  }catch(e){return jsonError(e)}
 }
@@ -97,7 +99,8 @@ export async function PATCH(req:Request,{params}:{params:Promise<{activityId:str
    const state:State={phase:'PLANNING',sentDisruptions:[],startedAt:new Date().toISOString()};
    const row=await prisma.gameRound.create({data:{batchId:activity.batchId,activityId,teamId:null,roundNo:(latest?.roundNo??0)+1,state:state as unknown as Prisma.InputJsonValue,openedAt:new Date()}});
    await prisma.auditLog.create({data:{actorUserId:actor.id,tenantId:activity.tenantId,batchId:activity.batchId,action:'OPEN_ACTIVITY',resourceType:'CalendarTetrisRound',resourceId:row.id,metadata:{roundNo:row.roundNo}}});
-   return NextResponse.json({ok:true,round:row});
+   publishBatchEvent(activity.batchId, 'GAME_STATE', activity.id);
+  return NextResponse.json({ok:true,round:row});
   }
   if(!latest||!current)throw new HttpError('Calendar Tetris belum dimulai',409);
   if(current.phase==='CLOSED')throw new HttpError('Calendar Tetris sudah ditutup',409);
@@ -109,10 +112,12 @@ export async function PATCH(req:Request,{params}:{params:Promise<{activityId:str
    const next:State={...current,sentDisruptions:[...current.sentDisruptions,no]};
    const row=await prisma.gameRound.update({where:{id:latest.id},data:{state:next as unknown as Prisma.InputJsonValue}});
    await prisma.auditLog.create({data:{actorUserId:actor.id,tenantId:activity.tenantId,batchId:activity.batchId,action:'SEND_EVENT',resourceType:'CalendarTetrisRound',resourceId:latest.id,metadata:{disruptionNo:no}}});
-   return NextResponse.json({ok:true,round:row});
+   publishBatchEvent(activity.batchId, 'GAME_STATE', activity.id);
+  return NextResponse.json({ok:true,round:row});
   }
   const next:State={...current,phase:'CLOSED'};
   const row=await prisma.gameRound.update({where:{id:latest.id},data:{state:next as unknown as Prisma.InputJsonValue,closedAt:new Date()}});
+  publishBatchEvent(activity.batchId, 'GAME_STATE', activity.id);
   return NextResponse.json({ok:true,round:row});
  }catch(e){return jsonError(e)}
 }
