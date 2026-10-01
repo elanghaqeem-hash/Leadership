@@ -34,13 +34,16 @@ jobs:
           node-version: 22
 
       - name: Install dependencies
-        run: npm install --ignore-scripts
+        run: npm ci --ignore-scripts
 
       - name: Generate Prisma client
         run: npm run db:generate
 
-      - name: Create CI database schema
-        run: npm run db:push
+      - name: Apply committed Prisma migrations
+        run: npm run db:migrate
+
+      - name: Verify migration state
+        run: npx prisma migrate status
 
       - name: Seed Excel-derived master content
         run: npm run db:seed
@@ -85,18 +88,6 @@ jobs:
       - name: Dependency audit gate
         run: npm audit --omit=dev --audit-level=high
 
-      - name: Generate migration and lockfile artifacts
-        run: |
-          mkdir -p /tmp/ltw-hardening-assets
-          npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > /tmp/ltw-hardening-assets/migration.sql
-          cp package-lock.json /tmp/ltw-hardening-assets/package-lock.json
-
-      - name: Upload hardening artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: sprint1-hardening-assets
-          path: /tmp/ltw-hardening-assets
-          retention-days: 3
 
       - name: Stop production server
         if: always()
