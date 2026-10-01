@@ -9,6 +9,23 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: leadership
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d leadership"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DATABASE_URL: postgresql://postgres@localhost:5432/leadership?schema=public
+      APP_URL: http://localhost:3000
+      APP_SECRET: ci-only-app-secret-at-least-32-bytes-long
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -16,6 +33,9 @@ jobs:
           node-version: 22
       - run: npm install --ignore-scripts
       - run: npm run db:generate
+      - run: npm run db:push
+      - run: npm run db:seed
+      - run: npm run test:sprint1:db
       - run: npm run typecheck
       - run: npm run test:sprint1
       - run: npm run build
