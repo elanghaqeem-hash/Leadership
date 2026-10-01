@@ -91,6 +91,12 @@ function structuredGameContent() {
     additionalData: String(r[3] ?? ''),
   }));
 
+  const detectiveRows = rowsAfterGameHeading('Game 7 · Detective Room');
+  const detectiveEvidence = detectiveRows.filter((r)=>Number.isFinite(Number(r[0]))).map((r)=>({
+    no:Number(r[0]), topic:String(r[1]??''), evidence:String(r[2]??''), category:String(r[3]??''),
+  }));
+  const detectiveDiagnosisKey = String(detectiveRows.find((r)=>String(r[0]??'').startsWith('Kunci:'))?.[0]??'').replace(/^Kunci:\s*/,'').trim();
+
   const biasTrapRows = rowsAfterGameHeading('Game 9 · Bias Trap');
   const biasTrapCards = biasTrapRows.map((r)=>({
     no:Number(r[0]), prompt:String(r[1]??''), bias:String(r[2]??''), betterQuestion:String(r[3]??''),
@@ -109,7 +115,7 @@ function structuredGameContent() {
     observerFocus:String(r[2] ?? ''),
   }));
 
-  return { mirrorCards, pokerCards, calendarBase, calendarDisruptions, delegationRelay, factCards, biasTrapCards, biasTrapChoices, boardCases, warInitial, warEvents };
+  return { mirrorCards, pokerCards, calendarBase, calendarDisruptions, delegationRelay, factCards, detectiveEvidence, detectiveDiagnosisKey, biasTrapCards, biasTrapChoices, boardCases, warInitial, warEvents };
 }
 
 async function main() {
@@ -218,6 +224,17 @@ async function main() {
     title:'Fact or Fiction',
     payload:{cards:gameContent.factCards.map(({answer,additionalData,...card})=>card)},
     answerKey:{cards:gameContent.factCards.map(({no,answer,additionalData})=>({no,answer,additionalData}))},
+  }));
+  content.push(await upsertGlobalContent({
+    code:'DETECTIVE_ROOM_V1',
+    type:'TEAM_SIMULATION',
+    title:'Detective Room',
+    payload:{cards:gameContent.detectiveEvidence.map(({evidence,category,...card})=>card)},
+    answerKey:{
+      cards:gameContent.detectiveEvidence.map(({no,evidence,category})=>({no,evidence,category})),
+      diagnosisKey:gameContent.detectiveDiagnosisKey,
+      scoring:{diagnosisCorrect:40,relevantEvidence:5,remainingToken:2},
+    },
   }));
   content.push(await upsertGlobalContent({
     code:'BIAS_TRAP_V1',
