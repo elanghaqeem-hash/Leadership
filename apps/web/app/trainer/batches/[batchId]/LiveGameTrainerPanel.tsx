@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useActivityRealtime } from '@/hooks/useActivityRealtime';
 
 type Feed={
   activity:{id:string;type:string;title:string;status:string};
@@ -14,7 +15,8 @@ type Feed={
 export default function LiveGameTrainerPanel({activityId,activityType}:{activityId:string;activityType:string}){
  const[feed,setFeed]=useState<Feed|null>(null);const[error,setError]=useState('');const[busy,setBusy]=useState('');
  async function load(){const r=await fetch('/api/games/'+activityId+'/live',{cache:'no-store'});const d=await r.json();if(r.ok){setFeed(d);setError('')}else setError(d.error||'Gagal memuat game')}
- useEffect(()=>{void load();const t=setInterval(()=>void load(),1500);return()=>clearInterval(t)},[activityId]);
+ useEffect(()=>{void load()},[activityId]);
+ useActivityRealtime(activityId,load,5000);
  async function control(command:'START'|'TWIST'|'REVEAL'|'CLOSE'){setBusy(command);setError('');const r=await fetch('/api/games/'+activityId+'/live',{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({command})});const d=await r.json();setBusy('');if(!r.ok){setError(d.error||'Kontrol game gagal');return;}await load()}
  const prompt=feed?.card?.situation||feed?.card?.prompt||feed?.card?.statement||'';
  const roundLabel=feed?.round?'Round '+feed.round.roundNo+' · Kartu '+feed.round.cardNo+' · '+feed.round.stage+' · '+feed.round.phase:'Belum ada round';
