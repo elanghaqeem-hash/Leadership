@@ -5,6 +5,7 @@ import { prisma } from '@ltw/db';
 import { scoreDetectiveRoom } from '@ltw/scoring';
 import { assertPermission, requireUser } from '@/lib/auth';
 import { HttpError, jsonError } from '@/lib/http';
+import { publishBatchEvent } from '@/lib/realtime';
 
 const participantSchema=z.discriminatedUnion('action',[
  z.object({action:z.literal('BUY'),evidenceNo:z.number().int().min(1).max(12)}),
@@ -133,6 +134,7 @@ export async function POST(req:Request,{params}:{params:Promise<{activityId:stri
    create:{tenantId:activity.tenantId,batchId:activity.batchId,activityId,ownerType:'TEAM',teamId:membership.teamId,userId:user.id,submissionKey,payload:current as unknown as Prisma.InputJsonValue,submittedAt:new Date()},
    update:{userId:user.id,payload:current as unknown as Prisma.InputJsonValue,submittedAt:new Date(),version:{increment:1},score:null,scoreDetail:Prisma.DbNull},
   });
+  publishBatchEvent(activity.batchId, 'GAME_STATE', activity.id);
   return NextResponse.json({ok:true,version:saved.version,...calculate(state,current,key)});
  }catch(e){return jsonError(e)}
 }
@@ -152,7 +154,8 @@ export async function PATCH(req:Request,{params}:{params:Promise<{activityId:str
    const state:DetectiveState={phase:'RUNNING',tokenBudget:input.tokenBudget,evidenceCost:input.evidenceCost,startedAt:new Date().toISOString()};
    const row=await prisma.gameRound.create({data:{batchId:activity.batchId,activityId,teamId:null,roundNo:(latest?.roundNo??0)+1,state:state as unknown as Prisma.InputJsonValue,openedAt:new Date()}});
    await prisma.auditLog.create({data:{actorUserId:actor.id,tenantId:activity.tenantId,batchId:activity.batchId,action:'OPEN_ACTIVITY',resourceType:'DetectiveRoomRound',resourceId:row.id,metadata:{tokenBudget:input.tokenBudget,evidenceCost:input.evidenceCost}}});
-   return NextResponse.json({ok:true,round:row});
+   publishBatchEvent(activity.batchId, 'GAME_STATE', activity.id);
+  return NextResponse.json({ok:true,round:row});
   }
 
   if(!latest||!current)throw new HttpError('Detective Room belum dimulai',409);
@@ -169,12 +172,14 @@ export async function PATCH(req:Request,{params}:{params:Promise<{activityId:str
    const result=calculate(current,ts,key);
    await prisma.submission.update({where:{id:row.id},data:{payload:ts as unknown as Prisma.InputJsonValue,score:result.score?.total??null,scoreDetail:result as unknown as Prisma.InputJsonValue}});
    await prisma.auditLog.create({data:{actorUserId:actor.id,tenantId:activity.tenantId,batchId:activity.batchId,action:'CHANGE_SCORE',resourceType:'DetectiveRoom',resourceId:row.id,metadata:{teamId:team.id,diagnosisCorrect:input.correct}}});
-   return NextResponse.json({ok:true,...result});
+   publishBatchEvent(activity.batchId, 'GAME_STATE', activity.id);
+  return NextResponse.json({ok:true,...result});
   }
 
   if(current.phase==='CLOSED')throw new HttpError('Detective Room sudah ditutup',409);
   const next:DetectiveState={...current,phase:'CLOSED'};
   const row=await prisma.gameRound.update({where:{id:latest.id},data:{state:next as unknown as Prisma.InputJsonValue,closedAt:new Date()}});
+  publishBatchEvent(activity.batchId, 'GAME_STATE', activity.id);
   return NextResponse.json({ok:true,round:row});
  }catch(e){return jsonError(e)}
 }
