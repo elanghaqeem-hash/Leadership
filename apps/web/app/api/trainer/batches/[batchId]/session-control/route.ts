@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '@ltw/db';
 import { assertPermission } from '@/lib/auth';
 import { HttpError, jsonError } from '@/lib/http';
+import { publishBatchEvent } from '@/lib/realtime';
 
 const patchSchema=z.object({
   activityId:z.string().uuid(),
@@ -77,6 +78,7 @@ export async function PATCH(req:Request,{params}:{params:Promise<{batchId:string
     });
     return row;
   });
+  publishBatchEvent(batchId, 'ACTIVITY_STATUS', activity.id);
   return NextResponse.json({ok:true,activity:updated});
  }catch(e){return jsonError(e)}
 }
