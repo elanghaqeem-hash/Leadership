@@ -12,7 +12,7 @@ type AuctionFeed={round:any;roundInfo:string|null;leaderboard:any[]|null;readine
 type BoardFeed={round:any;case:any;timerSec:number};
 type CalendarFeed={round:any;disruptions:any[];readiness:any[]|null};
 
-const LIVE_GAME_TYPES=new Set(['LEADERSHIP_MIRROR','PRIORITY_POKER','FACT_OR_FICTION']);
+const LIVE_GAME_TYPES=new Set(['LEADERSHIP_MIRROR','PRIORITY_POKER','FACT_OR_FICTION','BIAS_TRAP']);
 
 function mmss(seconds:number){
  const m=Math.floor(seconds/60).toString().padStart(2,'0');
