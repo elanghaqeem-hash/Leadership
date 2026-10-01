@@ -5,6 +5,7 @@ import { prisma } from '@ltw/db';
 import { rankWarRoomTotals, scoreWarRoom } from '@ltw/scoring';
 import { assertPermission, requireUser } from '@/lib/auth';
 import { HttpError, jsonError } from '@/lib/http';
+import { publishBatchEvent } from '@/lib/realtime';
 
 const columns=['Priority','Decision','Delegation','Escalation','Communication','Action'] as const;
 const boardSchema=z.object({
@@ -135,6 +136,7 @@ export async function POST(req:Request,{params}:{params:Promise<{activityId:stri
    },
    update:{userId:user.id,payload:payload as Prisma.InputJsonValue,submittedAt:new Date(),version:{increment:1}},
   });
+  publishBatchEvent(activity.batchId, 'GAME_STATE', activity.id);
   return NextResponse.json({ok:true,version:saved.version,updatedAt:saved.updatedAt});
  }catch(e){return jsonError(e)}
 }
@@ -159,7 +161,8 @@ export async function PATCH(req:Request,{params}:{params:Promise<{activityId:str
     actorUserId:actor.id,tenantId:activity.tenantId,batchId:activity.batchId,action:'OPEN_ACTIVITY',
     resourceType:'WarRoomRound',resourceId:row.id,metadata:{roundNo:row.roundNo},
    }});
-   return NextResponse.json({ok:true,round:row});
+   publishBatchEvent(activity.batchId, 'GAME_STATE', activity.id);
+  return NextResponse.json({ok:true,round:row});
   }
 
   if(!latest||!current)throw new HttpError('War Room belum dimulai',409);
@@ -176,7 +179,8 @@ export async function PATCH(req:Request,{params}:{params:Promise<{activityId:str
     actorUserId:actor.id,tenantId:activity.tenantId,batchId:activity.batchId,action:'SEND_EVENT',
     resourceType:'WarRoomRound',resourceId:latest.id,metadata:{eventNo},
    }});
-   return NextResponse.json({ok:true,round:row});
+   publishBatchEvent(activity.batchId, 'GAME_STATE', activity.id);
+  return NextResponse.json({ok:true,round:row});
   }
 
   const next:WarState={...current,phase:'CLOSED'};
@@ -185,6 +189,7 @@ export async function PATCH(req:Request,{params}:{params:Promise<{activityId:str
    actorUserId:actor.id,tenantId:activity.tenantId,batchId:activity.batchId,action:'UPDATE',
    resourceType:'WarRoomRound',resourceId:latest.id,metadata:{command:'CLOSE'},
   }});
+  publishBatchEvent(activity.batchId, 'GAME_STATE', activity.id);
   return NextResponse.json({ok:true,round:row});
  }catch(e){return jsonError(e)}
 }
