@@ -3,7 +3,7 @@
 import { FormEvent, useState } from 'react';
 
 export const STRUCTURED_TYPES = new Set([
-  'DAILY_BIG_3','MEETING_CHECKLIST','DELEGATION_CONTRACT','RACI_BUILDER','GROW_COACHING','SBI_FEEDBACK',
+  'MINUTE_AUDIT','DAILY_BIG_3','MEETING_CHECKLIST','DELEGATION_CONTRACT','RACI_BUILDER','GROW_COACHING','SBI_FEEDBACK',
   'FACT_ASSUMPTION_OPINION_UNKNOWN','FIVE_WHYS','FISHBONE','ISSUE_TREE','BIAS_CHECKLIST','DECISION_MATRIX',
   'PRE_MORTEM','DECISION_LOG','ACTION_TRACKER',
 ]);
@@ -16,6 +16,26 @@ function Frame({children,submit}:{children:React.ReactNode;submit:()=>Promise<vo
  const[msg,setMsg]=useState('');const[loading,setLoading]=useState(false);
  async function onSubmit(e:FormEvent){e.preventDefault();setLoading(true);setMsg('');try{await submit();setMsg('Tersimpan.');}catch(e){setMsg(e instanceof Error?e.message:'Gagal menyimpan');}finally{setLoading(false)}}
  return <form onSubmit={onSubmit} className="mt-4 space-y-3">{children}{msg&&<p className="text-sm text-slate-600">{msg}</p>}<button disabled={loading} className="w-full rounded-xl bg-navy px-4 py-3 font-semibold text-white disabled:opacity-50">{loading?'Menyimpan…':'Simpan'}</button></form>
+}
+
+function MinuteAudit({activity,save,onSaved}:Props){
+ type Item={id:string;activity:string;durationMin:number;category:string};
+ const categories=['Focus','Meeting','Customer','People/Coaching','Admin/Batch','Buffer','Break','Other'];
+ const old=activity.submission?.payload?.items||[];
+ const[items,setItems]=useState<Item[]>(old.length?old.map((x:any)=>({...x,id:crypto.randomUUID()})):[{id:crypto.randomUUID(),activity:'',durationMin:30,category:'Focus'}]);
+ const total=items.reduce((s,x)=>s+(Number(x.durationMin)||0),0);
+ return <Frame submit={async()=>{await save({items:items.map(({id,...x})=>x)});onSaved()}}>
+   <div className="rounded-xl bg-slate-50 p-3">
+     <div className="flex items-center justify-between gap-3"><span className="text-sm font-semibold">Total waktu</span><span className={`font-mono text-lg font-bold ${total>480?'text-red-600':'text-navy'}`}>{total}/480 menit</span></div>
+     <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200"><div className={`h-full ${total>480?'bg-red-500':'bg-teal'}`} style={{width:`${Math.min(100,total/480*100)}%`}}/></div>
+   </div>
+   {items.map((x,i)=><div key={x.id} className="rounded-xl border border-slate-200 p-3">
+     <div className="flex items-center justify-between"><span className="text-sm font-semibold">Aktivitas {i+1}</span>{items.length>1&&<button type="button" onClick={()=>setItems(items.filter(y=>y.id!==x.id))} className="text-xs font-semibold text-red-600">Hapus</button>}</div>
+     <input required value={x.activity} onChange={e=>setItems(items.map(y=>y.id===x.id?{...y,activity:e.target.value}:y))} placeholder="Contoh: Meeting cabang" className={"mt-2 "+cls}/>
+     <div className="mt-2 grid grid-cols-2 gap-2"><input type="number" min="1" max="480" required value={x.durationMin} onChange={e=>setItems(items.map(y=>y.id===x.id?{...y,durationMin:Number(e.target.value)}:y))} className={cls}/><select value={x.category} onChange={e=>setItems(items.map(y=>y.id===x.id?{...y,category:e.target.value}:y))} className={cls}>{categories.map(k=><option key={k}>{k}</option>)}</select></div>
+   </div>)}
+   <button type="button" onClick={()=>setItems([...items,{id:crypto.randomUUID(),activity:'',durationMin:30,category:'Focus'}])} className="w-full rounded-xl border border-teal py-2.5 font-semibold text-teal">+ Aktivitas</button>
+ </Frame>
 }
 
 function Big3({activity,save,onSaved}:Props){
@@ -103,6 +123,7 @@ function ActionTracker({activity,save,onSaved}:Props){
 
 export default function StructuredTools(props:Props){
  switch(props.activity.type){
+  case'MINUTE_AUDIT':return <MinuteAudit {...props}/>;
   case'DAILY_BIG_3':return <Big3 {...props}/>;
   case'MEETING_CHECKLIST':return <Meeting {...props}/>;
   case'DELEGATION_CONTRACT':return <Delegation {...props}/>;
