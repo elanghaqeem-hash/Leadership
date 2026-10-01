@@ -25,7 +25,8 @@
     "test:sprint1:db": "node scripts/sprint1-smoke.mjs",
     "test:mfa": "vitest run apps/web/test/mfa.test.ts",
     "test:rls": "node scripts/rls-smoke.mjs",
-    "test:auth:http": "node scripts/auth-http-smoke.mjs"
+    "test:auth:http": "node scripts/auth-http-smoke.mjs",
+    "test:sprint2": "vitest run packages/authz/test/rbac.matrix.test.ts packages/imports/test/participants.test.ts packages/scoring/test/scoring.test.ts packages/activities/test/activities.test.ts apps/web/test/mfa.test.ts"
   },
   "dependencies": {
     "@prisma/client": "6.12.0",
