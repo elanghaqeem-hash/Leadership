@@ -12,7 +12,7 @@ type Activity={id:string;title:string;type:string;status:string;sequence:number;
 type Session={id:string;code:string;title:string;sequence:number;activities:Activity[]};
 type Feed={batch:{id:string;code:string;name:string;joinCode:string;status:string};participantCount:number;teams:Array<{id:string;name:string;number:number;_count:{members:number}}>;sessions:Session[]};
 
-const LIVE_GAME_TYPES=new Set(['LEADERSHIP_MIRROR','PRIORITY_POKER','FACT_OR_FICTION']);
+const LIVE_GAME_TYPES=new Set(['LEADERSHIP_MIRROR','PRIORITY_POKER','FACT_OR_FICTION','BIAS_TRAP']);
 
 function pill(status:string){
  if(status==='OPEN')return'bg-emerald-50 text-emerald-700';
