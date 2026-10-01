@@ -1,6 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
+import StructuredTools, { STRUCTURED_TYPES } from './StructuredTools';
 
 type Activity = {
   id:string;
@@ -97,6 +98,7 @@ function ActivityBody({batchId,activity,content,onSaved}:{batchId:string;activit
  if(activity.type==='PRE_TEST'||activity.type==='POST_TEST')return <TestRunner batchId={batchId} activity={activity} onSaved={onSaved}/>;
  if(activity.type==='PRIORITY_SCORECARD')return <PriorityScorecard activity={activity} onSaved={onSaved}/>;
  if(activity.type==='WEEKLY_PLANNER')return <WeeklyPlanner activity={activity} onSaved={onSaved}/>;
+ if(STRUCTURED_TYPES.has(activity.type))return <StructuredTools activity={activity} save={(payload)=>postSubmission(activity.id,payload)} onSaved={onSaved}/>;
  return <p className="mt-3 text-sm leading-6 text-slate-500">{activity.status==='OPEN'?'Form aktivitas ini sedang dilengkapi pada Sprint 2.':'Aktivitas akan dibuka oleh trainer sesuai urutan sesi.'}</p>;
 }
 
