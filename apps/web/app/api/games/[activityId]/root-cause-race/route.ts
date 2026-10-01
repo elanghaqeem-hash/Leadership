@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { prisma } from '@ltw/db';
 import { assertPermission, requireUser } from '@/lib/auth';
 import { HttpError, jsonError } from '@/lib/http';
+import { publishBatchEvent } from '@/lib/realtime';
 
 const submissionSchema=z.object({
   problemStatement:z.string().trim().min(5).max(1500),
@@ -100,6 +101,7 @@ export async function POST(req:Request,{params}:{params:Promise<{activityId:stri
    create:{tenantId:activity.tenantId,batchId:activity.batchId,activityId,ownerType:'TEAM',teamId:membership.teamId,userId:user.id,submissionKey,payload:data as unknown as Prisma.InputJsonValue,submittedAt:now},
    update:{userId:user.id,payload:data as unknown as Prisma.InputJsonValue,submittedAt:now,version:{increment:1}},
   });
+  publishBatchEvent(activity.batchId, 'GAME_STATE', activity.id);
   return NextResponse.json({ok:true,version:saved.version,completedAt:data.completedAt});
  }catch(e){return jsonError(e)}
 }
@@ -119,7 +121,8 @@ export async function PATCH(req:Request,{params}:{params:Promise<{activityId:str
    const state:State={phase:'RUNNING',startedAt:new Date().toISOString(),durationSec:input.durationSec};
    const row=await prisma.gameRound.create({data:{batchId:activity.batchId,activityId,teamId:null,roundNo:(latest?.roundNo??0)+1,state:state as unknown as Prisma.InputJsonValue,openedAt:new Date()}});
    await prisma.auditLog.create({data:{actorUserId:actor.id,tenantId:activity.tenantId,batchId:activity.batchId,action:'OPEN_ACTIVITY',resourceType:'RootCauseRaceRound',resourceId:row.id,metadata:{durationSec:input.durationSec}}});
-   return NextResponse.json({ok:true,round:row});
+   publishBatchEvent(activity.batchId, 'GAME_STATE', activity.id);
+  return NextResponse.json({ok:true,round:row});
   }
 
   if(!latest||!current)throw new HttpError('Root Cause Race belum dimulai',409);
@@ -134,12 +137,14 @@ export async function PATCH(req:Request,{params}:{params:Promise<{activityId:str
    const next={...answer,verified:input.verified,reviewNote:input.note,reviewedBy:actor.id};
    await prisma.submission.update({where:{id:row.id},data:{payload:next as unknown as Prisma.InputJsonValue}});
    await prisma.auditLog.create({data:{actorUserId:actor.id,tenantId:activity.tenantId,batchId:activity.batchId,action:'CHANGE_SCORE',resourceType:'RootCauseRace',resourceId:row.id,metadata:{teamId:team.id,verified:input.verified}}});
-   return NextResponse.json({ok:true});
+   publishBatchEvent(activity.batchId, 'GAME_STATE', activity.id);
+  return NextResponse.json({ok:true});
   }
 
   if(current.phase==='CLOSED')throw new HttpError('Root Cause Race sudah ditutup',409);
   const next:State={...current,phase:'CLOSED'};
   const row=await prisma.gameRound.update({where:{id:latest.id},data:{state:next as unknown as Prisma.InputJsonValue,closedAt:new Date()}});
+  publishBatchEvent(activity.batchId, 'GAME_STATE', activity.id);
   return NextResponse.json({ok:true,round:row});
  }catch(e){return jsonError(e)}
 }
