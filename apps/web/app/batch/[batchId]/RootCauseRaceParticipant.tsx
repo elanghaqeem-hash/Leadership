@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useActivityRealtime } from '@/hooks/useActivityRealtime';
 
 type Evidence={no:number;dimension:string;evidence:string};
 type Answer={problemStatement:string;whys:string[];rootCause:string;evidenceNos:number[];countermeasure:string;verified?:boolean;reviewNote?:string};
@@ -15,7 +16,8 @@ function mmss(seconds:number){const m=Math.floor(seconds/60).toString().padStart
 export default function RootCauseRaceParticipant({activityId}:{activityId:string}){
  const[feed,setFeed]=useState<Feed|null>(null);const[answer,setAnswer]=useState<Answer>({problemStatement:'',whys:['','','','',''],rootCause:'',evidenceNos:[],countermeasure:''});const[initialized,setInitialized]=useState(false);const[now,setNow]=useState(Date.now());const[msg,setMsg]=useState('');const[busy,setBusy]=useState(false);
  async function load(){const r=await fetch('/api/games/'+activityId+'/root-cause-race',{cache:'no-store'});const d=await r.json();if(r.ok){setFeed(d);if(!initialized&&d.answer){setAnswer(d.answer);setInitialized(true)}}else setMsg(d.error||'Gagal memuat Root Cause Race')}
- useEffect(()=>{void load();const p=setInterval(()=>void load(),1500);const t=setInterval(()=>setNow(Date.now()),1000);return()=>{clearInterval(p);clearInterval(t)}},[activityId,initialized]);
+ useEffect(()=>{void load();const t=setInterval(()=>setNow(Date.now()),1000);return()=>clearInterval(t)},[activityId,initialized]);
+ useActivityRealtime(activityId,load,5000);
  const remaining=useMemo(()=>{if(!feed?.round)return 0;return Math.max(0,feed.round.durationSec-Math.floor((now-new Date(feed.round.startedAt).getTime())/1000))},[feed?.round,now]);
  async function submit(){setBusy(true);const r=await fetch('/api/games/'+activityId+'/root-cause-race',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(answer)});const d=await r.json();setBusy(false);if(!r.ok){setMsg(d.error||'Gagal mengirim analisis');return;}setMsg('Analisis tim tersimpan. Menunggu verifikasi trainer.');await load()}
  if(!feed)return <div className="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">{msg||'Memuat Root Cause Race…'}</div>;
