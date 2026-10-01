@@ -7,6 +7,7 @@ import ArenaParticipant from './ArenaParticipant';
 import WarRoomParticipant from './WarRoomParticipant';
 import DecisionAuctionParticipant from './DecisionAuctionParticipant';
 import BoardroomParticipant from './BoardroomParticipant';
+import CalendarTetrisParticipant from './CalendarTetrisParticipant';
 
 type Activity = {
   id:string;
@@ -109,6 +110,7 @@ function ActivityBody({batchId,activity,content,onSaved}:{batchId:string;activit
  if(activity.type==='WAR_ROOM')return <WarRoomParticipant activityId={activity.id}/>;
  if(activity.type==='DECISION_AUCTION')return <DecisionAuctionParticipant activityId={activity.id}/>;
  if(activity.type==='BOARDROOM')return <BoardroomParticipant activityId={activity.id}/>;
+ if(activity.type==='CALENDAR_TETRIS')return <CalendarTetrisParticipant activityId={activity.id}/>;
  if(activity.type==='PRE_TEST'||activity.type==='POST_TEST')return <TestRunner batchId={batchId} activity={activity} onSaved={onSaved}/>;
  if(activity.type==='PRIORITY_SCORECARD')return <PriorityScorecard activity={activity} onSaved={onSaved}/>;
  if(activity.type==='WEEKLY_PLANNER')return <WeeklyPlanner activity={activity} onSaved={onSaved}/>;
