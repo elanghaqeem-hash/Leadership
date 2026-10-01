@@ -5,6 +5,7 @@ import { prisma } from '@ltw/db';
 import { scoreDecisionAuction, type AuctionProgram, type AuctionRound } from '@ltw/scoring';
 import { assertPermission, requireUser } from '@/lib/auth';
 import { HttpError, jsonError } from '@/lib/http';
+import { publishBatchEvent } from '@/lib/realtime';
 
 const submitSchema=z.object({activeProgramIds:z.array(z.string().min(1).max(80)).max(7).refine(v=>new Set(v).size===v.length,'Program tidak boleh duplikat')});
 const controlSchema=z.object({command:z.enum(['START','CLOSE'])});
@@ -113,6 +114,7 @@ export async function POST(req:Request,{params}:{params:Promise<{activityId:stri
    create:{tenantId:activity.tenantId,batchId:activity.batchId,activityId,ownerType:'TEAM',teamId:membership.teamId,userId:user.id,submissionKey,payload:data as Prisma.InputJsonValue,submittedAt:new Date()},
    update:{userId:user.id,payload:data as Prisma.InputJsonValue,submittedAt:new Date(),version:{increment:1}},
   });
+  publishBatchEvent(activity.batchId, 'GAME_STATE', activity.id);
   return NextResponse.json({ok:true,status});
  }catch(e){return jsonError(e)}
 }
@@ -133,13 +135,15 @@ export async function PATCH(req:Request,{params}:{params:Promise<{activityId:str
     const state:AuctionState={round:rounds[nextIndex],phase:'CHOOSING',startedAt:new Date().toISOString()};
     const row=await prisma.gameRound.create({data:{batchId:activity.batchId,activityId,teamId:null,roundNo:(latest?.roundNo??0)+1,state:state as unknown as Prisma.InputJsonValue,openedAt:new Date()}});
     await prisma.auditLog.create({data:{actorUserId:actor.id,tenantId:activity.tenantId,batchId:activity.batchId,action:'OPEN_ACTIVITY',resourceType:'AuctionRound',resourceId:row.id,metadata:{round:state.round}}});
-    return NextResponse.json({ok:true,round:row});
+    publishBatchEvent(activity.batchId, 'GAME_STATE', activity.id);
+  return NextResponse.json({ok:true,round:row});
   }
   if(!latest||!current)throw new HttpError('Belum ada round aktif',409);
   if(current.phase==='CLOSED')throw new HttpError('Round sudah ditutup',409);
   const next:AuctionState={...current,phase:'CLOSED'};
   const row=await prisma.gameRound.update({where:{id:latest.id},data:{state:next as unknown as Prisma.InputJsonValue,closedAt:new Date()}});
   await prisma.auditLog.create({data:{actorUserId:actor.id,tenantId:activity.tenantId,batchId:activity.batchId,action:'UPDATE',resourceType:'AuctionRound',resourceId:latest.id,metadata:{round:current.round,command:'CLOSE'}}});
+  publishBatchEvent(activity.batchId, 'GAME_STATE', activity.id);
   return NextResponse.json({ok:true,round:row});
  }catch(e){return jsonError(e)}
 }
