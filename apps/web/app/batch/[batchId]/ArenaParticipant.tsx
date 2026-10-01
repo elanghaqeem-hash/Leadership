@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useActivityRealtime } from '@/hooks/useActivityRealtime';
 
 type Feed={
   activity:{id:string;title:string;status:string};
@@ -17,7 +18,8 @@ const decisions=['Do','Delegate','Escalate','Defer'];
 export default function ArenaParticipant({activityId}:{activityId:string}){
  const[feed,setFeed]=useState<Feed|null>(null);const[error,setError]=useState('');const[busy,setBusy]=useState(false);
  async function load(){const r=await fetch('/api/games/'+activityId+'/arena',{cache:'no-store'});const d=await r.json();if(r.ok){setFeed(d);setError('')}else setError(d.error||'Gagal memuat Arena')}
- useEffect(()=>{void load();const t=setInterval(()=>void load(),1500);return()=>clearInterval(t)},[activityId]);
+ useEffect(()=>{void load()},[activityId]);
+ useActivityRealtime(activityId,load,5000);
  async function choose(decision:string){setBusy(true);const r=await fetch('/api/games/'+activityId+'/arena',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({decision})});const d=await r.json();setBusy(false);if(!r.ok){setError(d.error||'Gagal menyimpan keputusan');return;}await load()}
  if(!feed)return <div className="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">{error||'Menunggu Arena…'}</div>;
  if(!feed.round||!feed.event)return <div className="mt-4 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">Trainer belum memulai event Arena.</div>;
