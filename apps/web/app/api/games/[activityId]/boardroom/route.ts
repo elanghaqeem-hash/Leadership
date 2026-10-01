@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { prisma } from '@ltw/db';
 import { assertPermission } from '@/lib/auth';
 import { HttpError, jsonError } from '@/lib/http';
+import { publishBatchEvent } from '@/lib/realtime';
 
 const controlSchema=z.object({command:z.enum(['START','STOP']),caseNo:z.number().int().positive().optional()});
 
@@ -69,7 +70,8 @@ export async function PATCH(req:Request,{params}:{params:Promise<{activityId:str
    const state:BoardState={caseNo:nextCase,phase:'RUNNING',startedAt:new Date().toISOString()};
    const row=await prisma.gameRound.create({data:{batchId:activity.batchId,activityId,teamId:null,roundNo:(latest?.roundNo??0)+1,state:state as unknown as Prisma.InputJsonValue,openedAt:new Date()}});
    await prisma.auditLog.create({data:{actorUserId:actor.id,tenantId:activity.tenantId,batchId:activity.batchId,action:'OPEN_ACTIVITY',resourceType:'BoardroomRound',resourceId:row.id,metadata:{caseNo:nextCase,timerSec:payload.timerSec}}});
-   return NextResponse.json({ok:true,round:row});
+   publishBatchEvent(activity.batchId, 'GAME_STATE', activity.id);
+  return NextResponse.json({ok:true,round:row});
   }
 
   if(!latest||!current)throw new HttpError('Timer belum dimulai',409);
@@ -78,6 +80,7 @@ export async function PATCH(req:Request,{params}:{params:Promise<{activityId:str
   const next:BoardState={...current,phase:'STOPPED',remainingAtStop:left};
   const row=await prisma.gameRound.update({where:{id:latest.id},data:{state:next as unknown as Prisma.InputJsonValue,closedAt:new Date()}});
   await prisma.auditLog.create({data:{actorUserId:actor.id,tenantId:activity.tenantId,batchId:activity.batchId,action:'UPDATE',resourceType:'BoardroomRound',resourceId:latest.id,metadata:{command:'STOP',remainingSec:left}}});
+  publishBatchEvent(activity.batchId, 'GAME_STATE', activity.id);
   return NextResponse.json({ok:true,round:row,remainingSec:left});
  }catch(e){return jsonError(e)}
 }
