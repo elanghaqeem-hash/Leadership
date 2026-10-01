@@ -34,6 +34,13 @@ const plannerSchema = z.object({
   })).max(300),
 });
 
+const minuteAuditSchema = z.object({
+  items: z.array(z.object({
+    activity: z.string().trim().min(1).max(500),
+    durationMin: z.number().int().min(1).max(480),
+    category: z.enum(['Focus','Meeting','Customer','People/Coaching','Admin/Batch','Buffer','Break','Other']),
+  })).min(1).max(100),
+});
 const dailyBig3Schema = z.object({ items: z.array(z.string().trim().min(1).max(300)).length(3) });
 const meetingSchema = z.object({
   purpose: z.string().trim().min(1).max(500),
@@ -216,7 +223,22 @@ export async function POST(req: Request, { params }: { params: Promise<{ activit
         : { buffer: null, focus: null, categorizedMinutes: 0 };
       normalized = parsed;
       scoreDetail = summary as Prisma.InputJsonValue;
-        } else if (activity.type === 'DAILY_BIG_3') {
+        } else if (activity.type === 'MINUTE_AUDIT') {
+      const parsed = minuteAuditSchema.parse(payload);
+      const totalMinutes = parsed.items.reduce((sum, item) => sum + item.durationMin, 0);
+      normalized = parsed;
+      scoreDetail = {
+        totalMinutes,
+        remainingMinutes: 480 - totalMinutes,
+        status: totalMinutes > 480 ? 'OVER_480' : totalMinutes === 480 ? 'BALANCED_480' : 'UNDER_480',
+        byCategory: Object.fromEntries(
+          [...new Set(parsed.items.map((x) => x.category))].map((category) => [
+            category,
+            parsed.items.filter((x) => x.category === category).reduce((sum, x) => sum + x.durationMin, 0),
+          ]),
+        ),
+      } as Prisma.InputJsonValue;
+    } else if (activity.type === 'DAILY_BIG_3') {
       normalized = dailyBig3Schema.parse(payload);
     } else if (activity.type === 'MEETING_CHECKLIST') {
       const parsed = meetingSchema.parse(payload);
