@@ -1,0 +1,256 @@
+import { NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
+import { z } from 'zod';
+import { prisma } from '@ltw/db';
+import { assertPermission, requireUser } from '@/lib/auth';
+import { HttpError, jsonError } from '@/lib/http';
+
+const voteSchema = z.object({ choice: z.string().trim().min(1).max(40) });
+const controlSchema = z.object({
+  command: z.enum(['START','TWIST','REVEAL','CLOSE']),
+  cardNo: z.number().int().positive().optional(),
+});
+
+type RoundState = {
+  gameType: string;
+  cardNo: number;
+  stage: 'BASE' | 'TWIST';
+  phase: 'VOTING' | 'REVEALED' | 'CLOSED';
+  startedAt: string;
+};
+
+const supported = new Set(['LEADERSHIP_MIRROR','PRIORITY_POKER','FACT_OR_FICTION']);
+
+function allowedChoices(type: string) {
+  if (type === 'LEADERSHIP_MIRROR') return ['A','B','C','D','E'];
+  if (type === 'PRIORITY_POKER') return ['P1','P2','P3','P4'];
+  if (type === 'FACT_OR_FICTION') return ['FACT','ASSUMPTION','OPINION','UNKNOWN'];
+  return [];
+}
+
+async function loadGame(activityId: string) {
+  const activity = await prisma.activity.findUnique({
+    where: { id: activityId },
+    select: {
+      id:true,tenantId:true,batchId:true,type:true,title:true,status:true,config:true,
+      batch:{select:{id:true,code:true,name:true}},
+    },
+  });
+  if (!activity || !supported.has(activity.type)) throw new HttpError('Live game tidak ditemukan', 404);
+  const cfg = activity.config as { gameContentCode?: unknown };
+  const code = typeof cfg?.gameContentCode === 'string' ? cfg.gameContentCode : null;
+  if (!code) throw new HttpError('Konten live game belum dikonfigurasi', 409);
+  const content = await prisma.contentItem.findFirst({
+    where: { code, isPublished:true, OR:[{tenantId:null},{tenantId:activity.tenantId}] },
+    orderBy: { version:'desc' },
+    select: { code:true,title:true,payload:true,answerKey:true,version:true },
+  });
+  if (!content) throw new HttpError('Konten game tidak ditemukan', 404);
+  return { activity, content };
+}
+
+function cardsFrom(content: { payload: Prisma.JsonValue }) {
+  const payload = content.payload as { cards?: unknown };
+  if (!Array.isArray(payload?.cards)) throw new HttpError('Format konten game tidak valid', 500);
+  return payload.cards as Array<Record<string, unknown>>;
+}
+
+function keyCardsFrom(content: { answerKey: Prisma.JsonValue | null }) {
+  const answer = content.answerKey as { cards?: unknown } | null;
+  return Array.isArray(answer?.cards) ? answer!.cards as Array<Record<string, unknown>> : [];
+}
+
+function stateOf(value: Prisma.JsonValue): RoundState {
+  return value as unknown as RoundState;
+}
+
+async function aggregateVotes(activityId: string, roundNo: number, stage: string) {
+  const prefix = `game:${activityId}:${roundNo}:${stage}:`;
+  const submissions = await prisma.submission.findMany({
+    where: { activityId, submissionKey:{startsWith:prefix} },
+    select: { payload:true },
+  });
+  const counts: Record<string, number> = {};
+  for (const row of submissions) {
+    const payload = row.payload as { choice?: unknown };
+    if (typeof payload.choice === 'string') counts[payload.choice] = (counts[payload.choice] ?? 0) + 1;
+  }
+  return { totalVotes:submissions.length, counts };
+}
+
+export async function GET(_req: Request, { params }: { params: Promise<{ activityId: string }> }) {
+  try {
+    const { activityId } = await params;
+    const { activity, content } = await loadGame(activityId);
+    const user = await assertPermission('BATCH_ACTIVITY_READ', { tenantId:activity.tenantId, batchId:activity.batchId });
+    const membership = await prisma.batchMembership.findUnique({
+      where:{batchId_userId:{batchId:activity.batchId,userId:user.id}},
+      select:{role:true,teamId:true,isActive:true},
+    });
+    const isTrainer = user.platformRole === 'SUPER_ADMIN' || membership?.role === 'LEAD_TRAINER';
+
+    const round = await prisma.gameRound.findFirst({
+      where:{activityId,teamId:null},
+      orderBy:{roundNo:'desc'},
+    });
+    if (!round) {
+      return NextResponse.json({
+        activity:{id:activity.id,type:activity.type,title:activity.title,status:activity.status},
+        content:{code:content.code,title:content.title,version:content.version},
+        round:null,
+        choices:allowedChoices(activity.type),
+      });
+    }
+
+    const state = stateOf(round.state);
+    const cards = cardsFrom(content);
+    const card = cards.find((x) => Number(x.no) === state.cardNo) ?? null;
+    const keyCard = keyCardsFrom(content).find((x) => Number(x.no) === state.cardNo) ?? null;
+    const revealed = state.phase === 'REVEALED' || state.phase === 'CLOSED';
+    const publicCard:Record<string, unknown> = { ...(card ?? {}) };
+
+    if (activity.type === 'PRIORITY_POKER' && state.stage === 'TWIST' && keyCard) {
+      publicCard.twistPrompt = keyCard.twistPrompt;
+    }
+    if (activity.type === 'FACT_OR_FICTION' && revealed && keyCard) {
+      publicCard.additionalData = keyCard.additionalData;
+    }
+
+    const voteKey = `game:${activityId}:${round.roundNo}:${state.stage}:${user.id}`;
+    const myVote = membership?.role === 'PARTICIPANT'
+      ? await prisma.submission.findUnique({where:{submissionKey:voteKey},select:{payload:true,submittedAt:true}})
+      : null;
+    const aggregate = await aggregateVotes(activityId, round.roundNo, state.stage);
+
+    let answer:unknown = null;
+    if ((revealed || isTrainer) && keyCard) {
+      answer = activity.type === 'PRIORITY_POKER'
+        ? state.stage === 'TWIST'
+          ? { expected:keyCard.twistExpected }
+          : { expected:keyCard.baseAnswer }
+        : activity.type === 'FACT_OR_FICTION'
+          ? { expected:keyCard.answer, additionalData:keyCard.additionalData }
+          : null;
+    }
+
+    return NextResponse.json({
+      activity:{id:activity.id,type:activity.type,title:activity.title,status:activity.status},
+      content:{code:content.code,title:content.title,version:content.version},
+      round:{id:round.id,roundNo:round.roundNo,...state,openedAt:round.openedAt,closedAt:round.closedAt},
+      card:publicCard,
+      choices:allowedChoices(activity.type),
+      myVote:myVote ? (myVote.payload as {choice?:unknown}).choice ?? null : null,
+      totalVotes:aggregate.totalVotes,
+      aggregate:(revealed || isTrainer) ? aggregate.counts : null,
+      answer,
+      canControl:isTrainer,
+    });
+  } catch (e) {
+    return jsonError(e);
+  }
+}
+
+export async function POST(req: Request, { params }: { params: Promise<{ activityId: string }> }) {
+  try {
+    const { activityId } = await params;
+    const { choice } = voteSchema.parse(await req.json());
+    const { activity } = await loadGame(activityId);
+    if (activity.status !== 'OPEN') throw new HttpError('Game belum dibuka atau sudah dikunci', 409);
+
+    const user = await requireUser();
+    await assertPermission('OWN_SUBMISSION_WRITE', {
+      tenantId:activity.tenantId,batchId:activity.batchId,resourceUserId:user.id,
+    });
+    const membership = await prisma.batchMembership.findUnique({
+      where:{batchId_userId:{batchId:activity.batchId,userId:user.id}},
+      select:{role:true,teamId:true,isActive:true},
+    });
+    if (!membership?.isActive || membership.role !== 'PARTICIPANT') throw new HttpError('Hanya participant aktif yang dapat voting', 403);
+
+    const round = await prisma.gameRound.findFirst({where:{activityId,teamId:null},orderBy:{roundNo:'desc'}});
+    if (!round) throw new HttpError('Round belum dimulai trainer', 409);
+    const state = stateOf(round.state);
+    if (state.phase !== 'VOTING') throw new HttpError('Voting round sudah ditutup/reveal', 409);
+
+    const normalizedChoice = choice.toUpperCase();
+    if (!allowedChoices(activity.type).includes(normalizedChoice)) throw new HttpError('Pilihan vote tidak valid', 400);
+    const submissionKey = `game:${activityId}:${round.roundNo}:${state.stage}:${user.id}`;
+    const payload = { game:true, roundNo:round.roundNo, stage:state.stage, choice:normalizedChoice };
+
+    await prisma.submission.upsert({
+      where:{submissionKey},
+      create:{
+        tenantId:activity.tenantId,batchId:activity.batchId,activityId,
+        ownerType:'USER',userId:user.id,teamId:membership.teamId,submissionKey,
+        payload:payload as Prisma.InputJsonValue,submittedAt:new Date(),
+      },
+      update:{payload:payload as Prisma.InputJsonValue,submittedAt:new Date(),version:{increment:1}},
+    });
+
+    const aggregate = await aggregateVotes(activityId,round.roundNo,state.stage);
+    return NextResponse.json({ok:true,choice:normalizedChoice,totalVotes:aggregate.totalVotes});
+  } catch (e) {
+    return jsonError(e);
+  }
+}
+
+export async function PATCH(req: Request, { params }: { params: Promise<{ activityId: string }> }) {
+  try {
+    const { activityId } = await params;
+    const input = controlSchema.parse(await req.json());
+    const { activity, content } = await loadGame(activityId);
+    const actor = await assertPermission('GAME_CONFIGURE', { tenantId:activity.tenantId,batchId:activity.batchId });
+    if (activity.status !== 'OPEN') throw new HttpError('Buka aktivitas terlebih dahulu dari Trainer Console', 409);
+
+    const cards = cardsFrom(content);
+    const latest = await prisma.gameRound.findFirst({where:{activityId,teamId:null},orderBy:{roundNo:'desc'}});
+    const latestState = latest ? stateOf(latest.state) : null;
+
+    if (input.command === 'START') {
+      if (latest && latestState?.phase !== 'CLOSED') throw new HttpError('Tutup round aktif sebelum memulai round baru', 409);
+      const roundNo = (latest?.roundNo ?? 0) + 1;
+      const previousCardNo = latestState?.cardNo ?? 0;
+      const cardNo = input.cardNo ?? (previousCardNo >= cards.length ? 1 : previousCardNo + 1);
+      if (!cards.some((x) => Number(x.no) === cardNo)) throw new HttpError('Nomor kartu tidak tersedia', 400);
+      const state:RoundState={gameType:activity.type,cardNo,stage:'BASE',phase:'VOTING',startedAt:new Date().toISOString()};
+      const round = await prisma.gameRound.create({
+        data:{batchId:activity.batchId,activityId,teamId:null,roundNo,state:state as unknown as Prisma.InputJsonValue,openedAt:new Date()},
+      });
+      await prisma.auditLog.create({data:{
+        actorUserId:actor.id,tenantId:activity.tenantId,batchId:activity.batchId,action:'OPEN_ACTIVITY',
+        resourceType:'GameRound',resourceId:round.id,metadata:{activityId,roundNo,cardNo,gameType:activity.type},
+      }});
+      return NextResponse.json({ok:true,round});
+    }
+
+    if (!latest || !latestState) throw new HttpError('Belum ada round aktif', 409);
+    let nextState:RoundState={...latestState};
+    let auditAction:'SEND_EVENT'|'REVEAL_KEY'|'UPDATE'='UPDATE';
+
+    if (input.command === 'TWIST') {
+      if (activity.type !== 'PRIORITY_POKER') throw new HttpError('Twist hanya tersedia untuk Priority Poker pada implementasi ini', 409);
+      if (latestState.phase === 'CLOSED') throw new HttpError('Round sudah ditutup', 409);
+      nextState={...latestState,stage:'TWIST',phase:'VOTING'};
+      auditAction='SEND_EVENT';
+    } else if (input.command === 'REVEAL') {
+      if (latestState.phase === 'CLOSED') throw new HttpError('Round sudah ditutup', 409);
+      nextState={...latestState,phase:'REVEALED'};
+      auditAction='REVEAL_KEY';
+    } else if (input.command === 'CLOSE') {
+      nextState={...latestState,phase:'CLOSED'};
+    }
+
+    const updated = await prisma.gameRound.update({
+      where:{id:latest.id},
+      data:{state:nextState as unknown as Prisma.InputJsonValue,closedAt:input.command==='CLOSE'?new Date():null},
+    });
+    await prisma.auditLog.create({data:{
+      actorUserId:actor.id,tenantId:activity.tenantId,batchId:activity.batchId,action:auditAction,
+      resourceType:'GameRound',resourceId:latest.id,
+      metadata:{activityId,roundNo:latest.roundNo,command:input.command,stage:nextState.stage,phase:nextState.phase},
+    }});
+    return NextResponse.json({ok:true,round:updated});
+  } catch (e) {
+    return jsonError(e);
+  }
+}
