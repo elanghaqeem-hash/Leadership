@@ -26,6 +26,19 @@ export async function GET(_req: Request, { params }: { params: Promise<{ batchId
       orderBy: [{ sequence: 'asc' }],
     });
 
+    const contentCodes = activities
+      .map((a) => {
+        const cfg = a.config as { contentCode?: unknown };
+        return typeof cfg?.contentCode === 'string' ? cfg.contentCode : null;
+      })
+      .filter((x): x is string => Boolean(x));
+    const contentItems = contentCodes.length
+      ? await prisma.contentItem.findMany({
+          where: { code: { in: [...new Set(contentCodes)] }, isPublished: true, OR: [{ tenantId: null }, { tenantId: batch.tenantId }] },
+          select: { code: true, type: true, title: true, version: true, payload: true },
+        })
+      : [];
+
     const submissions = membership?.role === 'PARTICIPANT'
       ? await prisma.submission.findMany({
           where: { batchId, userId: user.id, ownerType: 'USER' },
@@ -37,6 +50,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ batchId
     return NextResponse.json({
       batch,
       membership,
+      content: Object.fromEntries(contentItems.map((item) => [item.code, item])),
       activities: activities.map((a) => ({
         id: a.id,
         type: a.type,
