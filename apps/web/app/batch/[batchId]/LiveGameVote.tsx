@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useActivityRealtime } from '@/hooks/useActivityRealtime';
 
 type LiveFeed={
   activity:{id:string;type:string;title:string;status:string};
@@ -25,7 +26,8 @@ function promptFor(feed:LiveFeed){
 export default function LiveGameVote({activityId}:{activityId:string}){
  const[feed,setFeed]=useState<LiveFeed|null>(null);const[error,setError]=useState('');const[busy,setBusy]=useState(false);
  async function load(){const r=await fetch(`/api/games/${activityId}/live`,{cache:'no-store'});const d=await r.json();if(r.ok){setFeed(d);setError('')}else setError(d.error||'Gagal memuat game')}
- useEffect(()=>{void load();const t=setInterval(()=>void load(),1500);return()=>clearInterval(t)},[activityId]);
+ useEffect(()=>{void load()},[activityId]);
+ useActivityRealtime(activityId,load,5000);
  async function vote(choice:string){setBusy(true);setError('');const r=await fetch(`/api/games/${activityId}/live`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({choice})});const d=await r.json();setBusy(false);if(!r.ok){setError(d.error||'Vote gagal');return;}await load()}
  const maxCount=useMemo(()=>feed?.aggregate?Math.max(1,...Object.values(feed.aggregate)):1,[feed?.aggregate]);
  if(!feed)return <div className="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">{error||'Menunggu game…'}</div>;
