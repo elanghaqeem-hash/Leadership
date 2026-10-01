@@ -42,6 +42,12 @@ describe('critical RBAC rules', () => {
     })).toBe(false);
   });
 
+  it('Lead Trainer and Program Admin can manage teams, participant cannot', () => {
+    expect(can('TEAM_MANAGE', { role: 'LEAD_TRAINER', ...sameScope })).toBe(true);
+    expect(can('TEAM_MANAGE', { role: 'PROGRAM_ADMIN', ...sameScope })).toBe(true);
+    expect(can('TEAM_MANAGE', { role: 'PARTICIPANT', ...sameScope })).toBe(false);
+  });
+
   it('Participant cannot reveal keys or control sessions', () => {
     expect(can('ANSWER_KEY_REVEAL', { role: 'PARTICIPANT', ...sameScope })).toBe(false);
     expect(can('SESSION_CONTROL', { role: 'PARTICIPANT', ...sameScope })).toBe(false);
