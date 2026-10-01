@@ -5,7 +5,7 @@ import { FormEvent, useState } from 'react';
 export const STRUCTURED_TYPES = new Set([
   'MINUTE_AUDIT','DAILY_BIG_3','MEETING_CHECKLIST','DELEGATION_CONTRACT','RACI_BUILDER','GROW_COACHING','SBI_FEEDBACK',
   'FACT_ASSUMPTION_OPINION_UNKNOWN','FIVE_WHYS','FISHBONE','ISSUE_TREE','BIAS_CHECKLIST','DECISION_MATRIX',
-  'PRE_MORTEM','DECISION_LOG','ACTION_TRACKER',
+  'PRE_MORTEM','DECISION_LOG','ACTION_TRACKER','REFLECTION','AAR_STOP_START_CONTINUE',
 ]);
 
 type Props={activity:any;save:(payload:unknown)=>Promise<any>;onSaved:()=>void};
@@ -121,6 +121,16 @@ function ActionTracker({activity,save,onSaved}:Props){
  return <Frame submit={async()=>{await save({items:items.map(({id,...x})=>x)});onSaved()}}>{items.map((x:any)=><div key={x.id} className="rounded-xl border border-slate-200 p-3"><textarea value={x.action} onChange={e=>setItems(items.map(y=>y.id===x.id?{...y,action:e.target.value}:y))} placeholder="Action" className={area}/><div className="mt-2 grid grid-cols-2 gap-2"><input value={x.owner} onChange={e=>setItems(items.map(y=>y.id===x.id?{...y,owner:e.target.value}:y))} placeholder="Owner" className={cls}/><input type="date" value={x.deadline} onChange={e=>setItems(items.map(y=>y.id===x.id?{...y,deadline:e.target.value}:y))} className={cls}/><input value={x.evidence} onChange={e=>setItems(items.map(y=>y.id===x.id?{...y,evidence:e.target.value}:y))} placeholder="Evidence" className={cls}/><select value={x.status} onChange={e=>setItems(items.map(y=>y.id===x.id?{...y,status:e.target.value}:y))} className={cls}>{['Open','On track','Done'].map(v=><option key={v}>{v}</option>)}</select></div></div>)}<button type="button" onClick={()=>setItems([...items,{id:crypto.randomUUID(),action:'',owner:'',deadline:'',evidence:'',status:'Open'}])} className="w-full rounded-xl border border-teal py-2.5 font-semibold text-teal">+ Action</button></Frame>
 }
 
+function Reflection({activity,save,onSaved}:Props){
+ const old=activity.submission?.payload||{};const[state,setState]=useState({reflection:old.reflection||'',keyTakeaway:old.keyTakeaway||'',commitment:old.commitment||''});
+ return <Frame submit={async()=>{await save(state);onSaved()}}><label className="block text-sm font-medium">Refleksi<textarea required value={state.reflection} onChange={e=>setState({...state,reflection:e.target.value})} className={"mt-1 "+area} placeholder="Apa yang paling penting dari sesi ini?"/></label><label className="block text-sm font-medium">Key Takeaway<textarea value={state.keyTakeaway} onChange={e=>setState({...state,keyTakeaway:e.target.value})} className={"mt-1 "+area}/></label><label className="block text-sm font-medium">Commitment<textarea value={state.commitment} onChange={e=>setState({...state,commitment:e.target.value})} className={"mt-1 "+area}/></label><p className="text-xs leading-5 text-slate-500">Refleksi pribadi ditandai private di sistem.</p></Frame>
+}
+
+function Aar({activity,save,onSaved}:Props){
+ const old=activity.submission?.payload||{};const fields=[['whatHappened','What happened?'],['whatWorked','What worked?'],['whatToImprove','What can be improved?'],['stop','STOP'],['start','START'],['continue','CONTINUE']] as const;const[state,setState]=useState<Record<string,string>>(()=>Object.fromEntries(fields.map(([k])=>[k,old[k]||''])));
+ return <Frame submit={async()=>{await save(state);onSaved()}}>{fields.map(([k,l])=><label key={k} className="block text-sm font-medium">{l}<textarea required value={state[k]} onChange={e=>setState({...state,[k]:e.target.value})} className={"mt-1 "+area}/></label>)}</Frame>
+}
+
 export default function StructuredTools(props:Props){
  switch(props.activity.type){
   case'MINUTE_AUDIT':return <MinuteAudit {...props}/>;
@@ -139,6 +149,8 @@ export default function StructuredTools(props:Props){
   case'PRE_MORTEM':return <PreMortem {...props}/>;
   case'DECISION_LOG':return <DecisionLog {...props}/>;
   case'ACTION_TRACKER':return <ActionTracker {...props}/>;
+  case'REFLECTION':return <Reflection {...props}/>;
+  case'AAR_STOP_START_CONTINUE':return <Aar {...props}/>;
   default:return null;
  }
 }
