@@ -82,8 +82,21 @@ jobs:
       - name: HTTP login/session smoke
         run: npm run test:auth:http
 
-      - name: Dependency audit report
-        run: npm audit --omit=dev --audit-level=high || true
+      - name: Dependency audit gate
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Generate migration and lockfile artifacts
+        run: |
+          mkdir -p /tmp/ltw-hardening-assets
+          npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > /tmp/ltw-hardening-assets/migration.sql
+          cp package-lock.json /tmp/ltw-hardening-assets/package-lock.json
+
+      - name: Upload hardening artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sprint1-hardening-assets
+          path: /tmp/ltw-hardening-assets
+          retention-days: 3
 
       - name: Stop production server
         if: always()
