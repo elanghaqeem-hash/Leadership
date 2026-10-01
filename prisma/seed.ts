@@ -18,6 +18,67 @@ async function upsertGlobalContent(input: {code:string;type:string;title:string;
   return prisma.contentItem.create({ data:{tenantId:null,code:input.code,version:1,type:input.type,title:input.title,payload:input.payload as any,answerKey:input.answerKey as any,isPublished:true} });
 }
 
+
+function rowsAfterGameHeading(needle: string) {
+  const rows = seed.gameCardsRaw?.rows as unknown[][];
+  const heading = rows.findIndex((row) => String(row?.[0] ?? '').includes(needle));
+  if (heading < 0) throw new Error(`Game cards section not found: ${needle}`);
+  let i = heading + 1;
+  while (i < rows.length && String(rows[i]?.[0] ?? '').toLowerCase() !== 'no') i += 1;
+  i += 1;
+  const out: unknown[][] = [];
+  while (i < rows.length && rows[i]?.[0] != null && String(rows[i][0]).trim() !== '') {
+    out.push(rows[i]);
+    i += 1;
+  }
+  return out;
+}
+
+function splitLabeledOptions(text: string) {
+  return Object.fromEntries(
+    text.split(' · ').map((part) => {
+      const m = part.match(/^([A-E]):\s*(.*)$/);
+      return m ? [m[1], m[2]] : [part, part];
+    }),
+  );
+}
+
+function structuredGameContent() {
+  const mirrorRows = rowsAfterGameHeading('Game 1 · Leadership Mirror');
+  const mirrorCards = mirrorRows.map((r) => ({
+    no: Number(r[0]),
+    situation: String(r[1] ?? ''),
+    options: {
+      ...splitLabeledOptions(String(r[2] ?? '')),
+      ...splitLabeledOptions(String(r[3] ?? '')),
+      ...splitLabeledOptions(String(r[4] ?? '')),
+    },
+  }));
+
+  const pokerRows = rowsAfterGameHeading('Game 3 · Priority Poker');
+  const pokerCards = pokerRows.map((r) => {
+    const twist = String(r[3] ?? '');
+    const [twistPrompt, ...rest] = twist.split('→');
+    return {
+      no: Number(r[0]),
+      prompt: String(r[1] ?? ''),
+      baseAnswer: String(r[2] ?? ''),
+      twistPrompt: twistPrompt.trim(),
+      twistExpected: rest.join('→').trim() || twist.trim(),
+    };
+  });
+
+  const factRows = rowsAfterGameHeading('Game 6 · Fact or Fiction');
+  const factCards = factRows.map((r) => ({
+    no: Number(r[0]),
+    statement: String(r[1] ?? ''),
+    answer: String(r[2] ?? ''),
+    additionalData: String(r[3] ?? ''),
+  }));
+
+  return { mirrorCards, pokerCards, factCards };
+}
+
 async function main() {
   const email = process.env.BOOTSTRAP_ADMIN_EMAIL?.trim().toLowerCase();
   const password = process.env.BOOTSTRAP_ADMIN_PASSWORD;
@@ -56,6 +117,7 @@ async function main() {
     update:{schemaVersion:1,config:scoringConfig,configHash:stableHash(scoringConfig)},
   });
 
+  const gameContent = structuredGameContent();
   const content = [] as Awaited<ReturnType<typeof upsertGlobalContent>>[];
   content.push(await upsertGlobalContent({code:'PROGRAM_BLUEPRINT_V1',type:'PROGRAM_BLUEPRINT',title:blueprint.title,payload:blueprint}));
   content.push(await upsertGlobalContent({code:'SELF_DIAGNOSTIC_V1',type:'SELF_DIAGNOSTIC',title:'Self-Diagnostic',payload:seed.selfDiagnostic}));
@@ -64,6 +126,26 @@ async function main() {
   content.push(await upsertGlobalContent({code:'ARENA_EVENTS_V1',type:'GAME_CARDS',title:'Banking Leadership Arena',payload:{events:seed.arena.events},answerKey:{events:seed.arena.events.map((x:any)=>({no:x.no,best:x.best,acceptable:x.acceptable}))}}));
   content.push(await upsertGlobalContent({code:'DECISION_AUCTION_V1',type:'GAME_CARDS',title:'Decision Auction',payload:seed.decisionAuction}));
   content.push(await upsertGlobalContent({code:'GAME_CARDS_EXCEL_V1',type:'GAME_CARDS_RAW',title:'Kartu Game dari Excel',payload:seed.gameCardsRaw}));
+  content.push(await upsertGlobalContent({
+    code:'LEADERSHIP_MIRROR_V1',
+    type:'LIVE_GAME',
+    title:'Leadership Mirror',
+    payload:{cards:gameContent.mirrorCards},
+  }));
+  content.push(await upsertGlobalContent({
+    code:'PRIORITY_POKER_V1',
+    type:'LIVE_GAME',
+    title:'Priority Poker',
+    payload:{cards:gameContent.pokerCards.map(({baseAnswer,twistPrompt,twistExpected,...card})=>card)},
+    answerKey:{cards:gameContent.pokerCards.map(({no,baseAnswer,twistPrompt,twistExpected})=>({no,baseAnswer,twistPrompt,twistExpected}))},
+  }));
+  content.push(await upsertGlobalContent({
+    code:'FACT_OR_FICTION_V1',
+    type:'LIVE_GAME',
+    title:'Fact or Fiction',
+    payload:{cards:gameContent.factCards.map(({answer,additionalData,...card})=>card)},
+    answerKey:{cards:gameContent.factCards.map(({no,answer,additionalData})=>({no,answer,additionalData}))},
+  }));
   content.push(await upsertGlobalContent({code:'MANAGER_FOLLOWUP_V1',type:'FOLLOW_UP_CONFIG',title:'Manager Follow-up',payload:seed.managerFollowUp}));
   content.push(await upsertGlobalContent({code:'IMPACT_METRICS_V1',type:'IMPACT_CONFIG',title:'Impact Metrics',payload:seed.impactMetrics}));
   content.push(await upsertGlobalContent({code:'EVALUATION_L1_V1',type:'EVALUATION',title:'Evaluasi Training L1',payload:seed.evaluationL1}));
