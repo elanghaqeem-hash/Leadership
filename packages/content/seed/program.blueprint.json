@@ -401,7 +401,8 @@
           "type": "WAR_ROOM",
           "title": "War Room",
           "config": {
-            "rubricCode": "WAR_ROOM"
+            "rubricCode": "WAR_ROOM",
+            "contentCode": "WAR_ROOM_SCENARIO_V1"
           },
           "initialStatus": "DRAFT"
         }
