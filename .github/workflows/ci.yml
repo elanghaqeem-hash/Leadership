@@ -8,7 +8,7 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     services:
       postgres:
         image: postgres:16
@@ -24,18 +24,70 @@ jobs:
           --health-retries=10
     env:
       DATABASE_URL: postgresql://postgres@localhost:5432/leadership?schema=public
-      APP_URL: http://localhost:3000
+      APP_URL: http://127.0.0.1:3000
       APP_SECRET: ci-only-app-secret-at-least-32-bytes-long
+      MFA_ENCRYPTION_KEY: ci-only-mfa-encryption-key-at-least-32-bytes
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install --ignore-scripts
-      - run: npm run db:generate
-      - run: npm run db:push
-      - run: npm run db:seed
-      - run: npm run test:sprint1:db
-      - run: npm run typecheck
-      - run: npm run test:sprint1
-      - run: npm run build
+
+      - name: Install dependencies
+        run: npm install --ignore-scripts
+
+      - name: Generate Prisma client
+        run: npm run db:generate
+
+      - name: Create CI database schema
+        run: npm run db:push
+
+      - name: Seed Excel-derived master content
+        run: npm run db:seed
+
+      - name: Database seed smoke
+        run: npm run test:sprint1:db
+
+      - name: Apply and verify PostgreSQL RLS with non-owner runtime role
+        run: npm run test:rls
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm run test:sprint1
+
+      - name: Production build
+        run: npm run build
+
+      - name: Create HTTP auth smoke user
+        run: |
+          node scripts/create-auth-smoke-user.mjs > /tmp/auth-smoke.out
+          grep '^AUTH_' /tmp/auth-smoke.out >> "$GITHUB_ENV"
+          grep '^::add-mask::' /tmp/auth-smoke.out || true
+
+      - name: Start production server
+        run: |
+          npm --workspace @ltw/web run start > /tmp/leadership-next.log 2>&1 &
+          echo $! > /tmp/leadership-next.pid
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:3000/api/health >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/leadership-next.log
+          exit 1
+
+      - name: HTTP login/session smoke
+        run: npm run test:auth:http
+
+      - name: Dependency audit report
+        run: npm audit --omit=dev --audit-level=high || true
+
+      - name: Stop production server
+        if: always()
+        run: |
+          if [ -f /tmp/leadership-next.pid ]; then
+            kill "$(cat /tmp/leadership-next.pid)" || true
+          fi
