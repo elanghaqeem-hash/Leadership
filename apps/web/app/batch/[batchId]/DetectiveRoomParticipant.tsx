@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useActivityRealtime } from '@/hooks/useActivityRealtime';
 
 type Card={no:number;topic:string};
 type Feed={
@@ -15,7 +16,8 @@ type Feed={
 export default function DetectiveRoomParticipant({activityId}:{activityId:string}){
  const[feed,setFeed]=useState<Feed|null>(null);const[diagnosis,setDiagnosis]=useState('');const[initialized,setInitialized]=useState(false);const[msg,setMsg]=useState('');const[busy,setBusy]=useState('');
  async function load(){const r=await fetch('/api/games/'+activityId+'/detective-room',{cache:'no-store'});const d=await r.json();if(r.ok){setFeed(d);if(!initialized){setDiagnosis(d.teamState?.diagnosis||'');setInitialized(true)}}else setMsg(d.error||'Gagal memuat Detective Room')}
- useEffect(()=>{void load();const t=setInterval(()=>void load(),1500);return()=>clearInterval(t)},[activityId,initialized]);
+ useEffect(()=>{void load()},[activityId,initialized]);
+ useActivityRealtime(activityId,load,5000);
  const purchased=useMemo(()=>new Set(feed?.teamState?.purchased||[]),[feed?.teamState?.purchased]);
  async function buy(no:number){setBusy('buy'+no);const r=await fetch('/api/games/'+activityId+'/detective-room',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:'BUY',evidenceNo:no})});const d=await r.json();setBusy('');if(!r.ok){setMsg(d.error||'Gagal membeli evidence');return;}setMsg('Evidence dibuka. Sisa token '+d.remainingTokens);await load()}
  async function submitDiagnosis(){setBusy('diagnosis');const r=await fetch('/api/games/'+activityId+'/detective-room',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:'DIAGNOSIS',diagnosis})});const d=await r.json();setBusy('');if(!r.ok){setMsg(d.error||'Gagal mengirim diagnosis');return;}setMsg('Diagnosis tim tersimpan. Menunggu penilaian trainer.');await load()}
