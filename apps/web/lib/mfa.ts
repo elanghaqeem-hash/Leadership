@@ -64,7 +64,7 @@ export function verifyTotp(secret: string, code: string, atMs = Date.now(), wind
   const current = BigInt(Math.floor(atMs / 1000 / STEP_SECONDS));
   for (let delta = -window; delta <= window; delta += 1) {
     const counter = current + BigInt(delta);
-    if (counter < 0n) continue;
+    if (counter < BigInt(0)) continue;
     if (totpCode(secret, counter, 6) === code) return counter;
   }
   return null;
