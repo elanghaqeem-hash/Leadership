@@ -24,7 +24,8 @@ export async function POST(req:Request,{params}:{params:Promise<{batchId:string}
   let success=0;
   for(const row of parsed.rows){
    try{
-    await prisma.$transaction(async tx=>{
+    const devInvitation=await prisma.$transaction(async tx=>{
+      let devInvitation: {rowNumber:number;email:string;link:string}|undefined;
       let participant=await tx.user.findUnique({where:{email:row.email}});
       if(!participant)participant=await tx.user.create({data:{email:row.email,name:row.nama,emailVerifiedAt:null}});
       await tx.tenantMembership.upsert({
@@ -44,7 +45,7 @@ export async function POST(req:Request,{params}:{params:Promise<{batchId:string}
         await tx.magicLinkToken.deleteMany({where:{userId:participant.id,purpose:'ACCOUNT_ACTIVATION',consumedAt:null}});
         const activationToken=randomBytes(32).toString('base64url');
         await tx.magicLinkToken.create({data:{userId:participant.id,purpose:'ACCOUNT_ACTIVATION',tokenHash:hashToken(activationToken),expiresAt:new Date(Date.now()+24*60*60*1000)}});
-        if(process.env.NODE_ENV!=='production') invitationLinks.push({rowNumber:row.rowNumber,email:row.email,link:`${process.env.APP_URL||'http://localhost:3000'}/activate?token=${encodeURIComponent(activationToken)}`});
+        if(process.env.NODE_ENV!=='production') devInvitation={rowNumber:row.rowNumber,email:row.email,link:`${process.env.APP_URL||'http://localhost:3000'}/activate?token=${encodeURIComponent(activationToken)}`};
       }
 
       if(row.managerEmail){
@@ -58,7 +59,9 @@ export async function POST(req:Request,{params}:{params:Promise<{batchId:string}
       }else if(row.atasan){
         warnings.push({rowNumber:row.rowNumber,email:row.email,message:`Atasan "${row.atasan}" belum dipetakan karena atasan_email tidak tersedia.`});
       }
+      return devInvitation;
     });
+    if(devInvitation) invitationLinks.push(devInvitation);
     success++;
    }catch(error){parsed.errors.push({rowNumber:row.rowNumber,email:row.email,message:error instanceof Error?error.message:'Import row failed'});}
   }
