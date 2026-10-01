@@ -112,7 +112,8 @@
           "type": "CALENDAR_TETRIS",
           "title": "G4 Calendar Tetris",
           "config": {
-            "game": "G4"
+            "game": "G4",
+            "contentCode": "CALENDAR_TETRIS_V1"
           },
           "initialStatus": "DRAFT"
         }
