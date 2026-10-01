@@ -37,6 +37,31 @@ try {
   const pokerKey = byCode.get('PRIORITY_POKER_V1')?.answerKey?.cards;
   if (!Array.isArray(pokerKey) || pokerKey.length !== 8) throw new Error('Priority Poker answer key is missing');
 
+  const advancedContent = await prisma.contentItem.findMany({
+    where: { tenantId: null, code: { in: ['ARENA_EVENTS_V1','WAR_ROOM_SCENARIO_V1','DECISION_AUCTION_V1','BOARDROOM_CASES_V1'] }, version: 1 },
+    select: { code: true, payload: true, answerKey: true },
+  });
+  if (advancedContent.length !== 4) throw new Error(`Expected 4 advanced game content items, found ${advancedContent.length}`);
+  const advancedByCode = new Map(advancedContent.map((item) => [item.code, item]));
+
+  const arenaPayload = advancedByCode.get('ARENA_EVENTS_V1')?.payload;
+  const arenaEvents = arenaPayload?.events;
+  if (!Array.isArray(arenaEvents) || arenaEvents.length !== 20) throw new Error('Arena must have 20 Excel-derived events');
+  if (arenaEvents.some((event) => 'best' in event || 'acceptable' in event)) throw new Error('Arena answer key leaked into public payload');
+
+  const warPayload = advancedByCode.get('WAR_ROOM_SCENARIO_V1')?.payload;
+  if (!Array.isArray(warPayload?.initialConditions) || warPayload.initialConditions.length !== 10) throw new Error('War Room must have 10 initial conditions');
+  if (!Array.isArray(warPayload?.events) || warPayload.events.length !== 7) throw new Error('War Room must have 7 events');
+  if (warPayload.events.some((event) => 'observerFocus' in event)) throw new Error('War Room observer key leaked into public payload');
+
+  const auctionPayload = advancedByCode.get('DECISION_AUCTION_V1')?.payload;
+  if (!Array.isArray(auctionPayload?.programs) || auctionPayload.programs.length !== 7) throw new Error('Decision Auction must have 7 programs');
+  if ('roundInfo' in auctionPayload || auctionPayload.programs.some((program) => 'factors' in program)) throw new Error('Decision Auction future information leaked into public payload');
+
+  const boardPayload = advancedByCode.get('BOARDROOM_CASES_V1')?.payload;
+  if (!Array.isArray(boardPayload?.cases) || boardPayload.cases.length !== 3) throw new Error('Boardroom must have 3 Excel-derived cases');
+  if (boardPayload.timerSec !== 60) throw new Error('Boardroom timer must be 60 seconds');
+
   const delegationRubric = await prisma.rubric.findFirst({ where: { tenantId: null, code: 'DELEGATION_RELAY', version: 1 } });
   const delegationDimensions = delegationRubric?.dimensions;
   if (!Array.isArray(delegationDimensions) || delegationDimensions.length !== 8) throw new Error('Delegation Relay rubric must have 8 elements');
@@ -50,6 +75,7 @@ try {
     questionCount,
     liveGameContent: liveGames.map((x) => x.code),
     delegationRubricDimensions: delegationDimensions.length,
+    advancedContent: advancedContent.map((x) => x.code),
   }, null, 2));
 } finally {
   await prisma.$disconnect();
