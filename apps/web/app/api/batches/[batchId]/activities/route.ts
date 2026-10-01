@@ -68,6 +68,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ batchId
         title: a.title,
         sequence: a.sequence,
         status: a.status,
+        openedAt: a.openedAt,
         config: a.config,
         contentVersion: a.contentVersion,
         session: a.session,
