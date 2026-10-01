@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import StructuredTools, { STRUCTURED_TYPES } from './StructuredTools';
+import LiveGameVote from './LiveGameVote';
 
 type Activity = {
   id:string;
@@ -95,8 +96,11 @@ function TestRunner({batchId,activity,onSaved}:{batchId:string;activity:Activity
  return <div className="mt-4 space-y-5"><div className="sticky top-2 z-10 flex items-center justify-between rounded-xl bg-navy px-4 py-3 text-white shadow"><span className="text-sm font-semibold">20 soal</span><span className="font-mono text-lg">{Math.floor((remaining??0)/60).toString().padStart(2,'0')}:{((remaining??0)%60).toString().padStart(2,'0')}</span></div>{data.questions.map((q:any,idx:number)=><fieldset key={q.code} className="rounded-xl border border-slate-200 p-4"><legend className="px-1 text-sm font-semibold">{idx+1}. {q.prompt}</legend><div className="mt-3 space-y-2">{Object.entries(q.options as Record<string,string>).map(([key,value])=><label key={key} className="flex gap-3 rounded-lg bg-slate-50 p-3 text-sm"><input type="radio" name={q.code} value={key} checked={answers[q.code]===key} onChange={()=>setAnswers({...answers,[q.code]:key})}/><span><b>{key}.</b> {value}</span></label>)}</div></fieldset>)}{msg&&<p className="text-sm font-semibold text-slate-700">{msg}</p>}{remaining===0&&<p className="rounded-xl bg-amber-50 p-3 text-sm font-semibold text-amber-900">Waktu habis. Jawaban sedang dikirim otomatis.</p>}<button onClick={submit} disabled={remaining===0} className="w-full rounded-xl bg-navy px-4 py-3 font-semibold text-white disabled:opacity-50">Kirim Jawaban</button></div>
 }
 
+const LIVE_GAME_TYPES=new Set(['LEADERSHIP_MIRROR','PRIORITY_POKER','FACT_OR_FICTION']);
+
 function ActivityBody({batchId,activity,content,onSaved}:{batchId:string;activity:Activity;content:any;onSaved:()=>void}){
  if(activity.type==='SELF_DIAGNOSTIC')return <SelfDiagnostic activity={activity} content={content} onSaved={onSaved}/>;
+ if(LIVE_GAME_TYPES.has(activity.type))return <LiveGameVote activityId={activity.id}/>;
  if(activity.type==='PRE_TEST'||activity.type==='POST_TEST')return <TestRunner batchId={batchId} activity={activity} onSaved={onSaved}/>;
  if(activity.type==='PRIORITY_SCORECARD')return <PriorityScorecard activity={activity} onSaved={onSaved}/>;
  if(activity.type==='WEEKLY_PLANNER')return <WeeklyPlanner activity={activity} onSaved={onSaved}/>;
