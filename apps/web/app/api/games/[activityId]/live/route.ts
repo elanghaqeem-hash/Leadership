@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { prisma } from '@ltw/db';
 import { assertPermission, requireUser } from '@/lib/auth';
 import { HttpError, jsonError } from '@/lib/http';
+import { publishBatchEvent } from '@/lib/realtime';
 
 const voteSchema = z.object({ choice: z.string().trim().min(1).max(40) });
 const controlSchema = z.object({
@@ -195,7 +196,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ activit
     });
 
     const aggregate = await aggregateVotes(activityId,round.roundNo,state.stage);
-    return NextResponse.json({ok:true,choice:normalizedChoice,totalVotes:aggregate.totalVotes});
+    publishBatchEvent(activity.batchId, 'GAME_STATE', activity.id);
+  return NextResponse.json({ok:true,choice:normalizedChoice,totalVotes:aggregate.totalVotes});
   } catch (e) {
     return jsonError(e);
   }
@@ -227,7 +229,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ activi
         actorUserId:actor.id,tenantId:activity.tenantId,batchId:activity.batchId,action:'OPEN_ACTIVITY',
         resourceType:'GameRound',resourceId:round.id,metadata:{activityId,roundNo,cardNo,gameType:activity.type},
       }});
-      return NextResponse.json({ok:true,round});
+      publishBatchEvent(activity.batchId, 'GAME_STATE', activity.id);
+  return NextResponse.json({ok:true,round});
     }
 
     if (!latest || !latestState) throw new HttpError('Belum ada round aktif', 409);
@@ -256,7 +259,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ activi
       resourceType:'GameRound',resourceId:latest.id,
       metadata:{activityId,roundNo:latest.roundNo,command:input.command,stage:nextState.stage,phase:nextState.phase},
     }});
-    return NextResponse.json({ok:true,round:updated});
+    publishBatchEvent(activity.batchId, 'GAME_STATE', activity.id);
+  return NextResponse.json({ok:true,round:updated});
   } catch (e) {
     return jsonError(e);
   }
