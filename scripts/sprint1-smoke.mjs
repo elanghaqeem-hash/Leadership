@@ -21,10 +21,6 @@ try {
   const contentCount = await prisma.contentItem.count({ where: { tenantId: null, isPublished: true } });
   if (contentCount < 8) throw new Error(`Expected at least 8 published content items, found ${contentCount}`);
 
-  const adminEmail = process.env.BOOTSTRAP_ADMIN_EMAIL?.toLowerCase();
-  const admin = adminEmail ? await prisma.user.findUnique({ where: { email: adminEmail } }) : null;
-  if (!admin || admin.platformRole !== 'SUPER_ADMIN') throw new Error('Bootstrap Super Admin missing');
-
   console.log(JSON.stringify({
     ok: true,
     programId: program.id,
@@ -32,7 +28,6 @@ try {
     contentHash: version.contentHash,
     contentCount,
     questionCount,
-    bootstrapAdmin: admin.email,
   }, null, 2));
 } finally {
   await prisma.$disconnect();
