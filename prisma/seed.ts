@@ -72,6 +72,14 @@ function structuredGameContent() {
     };
   });
 
+  const calendarRows = rowsAfterSectionHeading('Game 4 · Calendar Tetris', 'Jenis');
+  const calendarBase = calendarRows.filter((r) => !String(r[0] ?? '').startsWith('Disrupsi')).map((r,idx) => ({
+    id:'C'+String(idx+1).padStart(2,'0'), kind:String(r[0] ?? ''), card:String(r[1] ?? ''),
+  }));
+  const calendarDisruptions = calendarRows.filter((r) => String(r[0] ?? '').startsWith('Disrupsi')).map((r,idx) => ({
+    no:idx+1, label:String(r[0] ?? ''), event:String(r[1] ?? ''),
+  }));
+
   const factRows = rowsAfterGameHeading('Game 6 · Fact or Fiction');
   const factCards = factRows.map((r) => ({
     no: Number(r[0]),
@@ -92,7 +100,7 @@ function structuredGameContent() {
     observerFocus:String(r[2] ?? ''),
   }));
 
-  return { mirrorCards, pokerCards, factCards, boardCases, warInitial, warEvents };
+  return { mirrorCards, pokerCards, calendarBase, calendarDisruptions, factCards, boardCases, warInitial, warEvents };
 }
 
 async function main() {
@@ -176,6 +184,13 @@ async function main() {
     title:'Priority Poker',
     payload:{cards:gameContent.pokerCards.map(({baseAnswer,twistPrompt,twistExpected,...card})=>card)},
     answerKey:{cards:gameContent.pokerCards.map(({no,baseAnswer,twistPrompt,twistExpected})=>({no,baseAnswer,twistPrompt,twistExpected}))},
+  }));
+  content.push(await upsertGlobalContent({
+    code:'CALENDAR_TETRIS_V1',
+    type:'TEAM_SIMULATION',
+    title:'Calendar Tetris',
+    payload:{cards:gameContent.calendarBase},
+    answerKey:{disruptions:gameContent.calendarDisruptions},
   }));
   content.push(await upsertGlobalContent({
     code:'FACT_OR_FICTION_V1',
