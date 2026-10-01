@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useActivityRealtime } from '@/hooks/useActivityRealtime';
 
 type Feed={
   round:null|{roundNo:number;eventNo:number;phase:'VOTING'|'REVEALED'|'CLOSED'};
@@ -13,7 +14,8 @@ type Feed={
 export default function ArenaTrainerPanel({activityId}:{activityId:string}){
  const[feed,setFeed]=useState<Feed|null>(null);const[error,setError]=useState('');const[busy,setBusy]=useState('');
  async function load(){const r=await fetch('/api/games/'+activityId+'/arena',{cache:'no-store'});const d=await r.json();if(r.ok){setFeed(d);setError('')}else setError(d.error||'Gagal memuat Arena')}
- useEffect(()=>{void load();const t=setInterval(()=>void load(),1500);return()=>clearInterval(t)},[activityId]);
+ useEffect(()=>{void load()},[activityId]);
+ useActivityRealtime(activityId,load,5000);
  async function control(command:'START'|'REVEAL'|'CLOSE'){setBusy(command);const r=await fetch('/api/games/'+activityId+'/arena',{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({command})});const d=await r.json();setBusy('');if(!r.ok){setError(d.error||'Kontrol Arena gagal');return;}await load()}
  return <div className="mt-3 rounded-xl bg-black/20 p-3 ring-1 ring-white/10">
    <div className="flex flex-wrap items-center justify-between gap-3"><div><div className="text-xs font-bold uppercase tracking-wider text-slate-400">Arena Control</div><div className="mt-1 text-sm font-semibold">{feed?.round?'Round '+feed.round.roundNo+' · Event '+feed.round.eventNo+' · '+feed.round.phase:'Belum dimulai'}</div></div><div className="grid grid-cols-3 gap-2"><button disabled={busy!==''||Boolean(feed?.round&&feed.round.phase!=='CLOSED')} onClick={()=>control('START')} className="rounded-lg bg-emerald-500/15 px-3 py-2 text-xs font-semibold text-emerald-300 disabled:opacity-30">Next Event</button><button disabled={busy!==''||!feed?.round||feed.round.phase!=='VOTING'} onClick={()=>control('REVEAL')} className="rounded-lg bg-sky-500/15 px-3 py-2 text-xs font-semibold text-sky-300 disabled:opacity-30">Reveal</button><button disabled={busy!==''||!feed?.round||feed.round.phase==='CLOSED'} onClick={()=>control('CLOSE')} className="rounded-lg bg-white/10 px-3 py-2 text-xs font-semibold text-slate-200 disabled:opacity-30">Close</button></div></div>
