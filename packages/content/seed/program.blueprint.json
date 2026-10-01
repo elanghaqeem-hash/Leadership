@@ -1,0 +1,488 @@
+{
+  "version": 1,
+  "title": "Leadership That Works — Program Blueprint",
+  "sessions": [
+    {
+      "code": "PRE",
+      "sequence": 1,
+      "title": "Pre-Training Readiness",
+      "phase": "PRE_TRAINING",
+      "activities": [
+        {
+          "type": "SELF_DIAGNOSTIC",
+          "title": "Self-Diagnostic Pre",
+          "config": {
+            "mode": "PRE",
+            "contentCode": "SELF_DIAGNOSTIC_V1"
+          },
+          "initialStatus": "OPEN"
+        },
+        {
+          "type": "MINUTE_AUDIT",
+          "title": "480-Minute Audit Awal",
+          "config": {
+            "mode": "PRE"
+          },
+          "initialStatus": "OPEN"
+        },
+        {
+          "type": "PRE_TEST",
+          "title": "Pre-Test",
+          "config": {
+            "testCode": "LTW_PRE_POST",
+            "kind": "PRE"
+          },
+          "initialStatus": "OPEN"
+        }
+      ]
+    },
+    {
+      "code": "S01",
+      "sequence": 2,
+      "title": "Opening & Leadership Mirror",
+      "phase": "DAY_1",
+      "activities": [
+        {
+          "type": "LEADERSHIP_MIRROR",
+          "title": "G1 Leadership Mirror",
+          "config": {
+            "game": "G1"
+          },
+          "initialStatus": "DRAFT"
+        }
+      ]
+    },
+    {
+      "code": "S02",
+      "sequence": 3,
+      "title": "Lead Yourself & 480-Minute Challenge",
+      "phase": "DAY_1",
+      "activities": [
+        {
+          "type": "MINUTE_AUDIT",
+          "title": "G2 480-Minute Challenge",
+          "config": {
+            "mode": "DAY1"
+          },
+          "initialStatus": "DRAFT"
+        }
+      ]
+    },
+    {
+      "code": "S03",
+      "sequence": 4,
+      "title": "Prioritize What Matters",
+      "phase": "DAY_1",
+      "activities": [
+        {
+          "type": "PRIORITY_SCORECARD",
+          "title": "Priority Scorecard",
+          "config": {
+            "contentCode": "PRIORITY_SCORECARD_V1"
+          },
+          "initialStatus": "DRAFT"
+        },
+        {
+          "type": "PRIORITY_POKER",
+          "title": "G3 Priority Poker",
+          "config": {
+            "game": "G3"
+          },
+          "initialStatus": "DRAFT"
+        }
+      ]
+    },
+    {
+      "code": "S04",
+      "sequence": 5,
+      "title": "Design Your Week",
+      "phase": "DAY_1",
+      "activities": [
+        {
+          "type": "WEEKLY_PLANNER",
+          "title": "Weekly Planner",
+          "config": {
+            "contentCode": "WEEKLY_PLANNER_V1"
+          },
+          "initialStatus": "DRAFT"
+        },
+        {
+          "type": "CALENDAR_TETRIS",
+          "title": "G4 Calendar Tetris",
+          "config": {
+            "game": "G4"
+          },
+          "initialStatus": "DRAFT"
+        }
+      ]
+    },
+    {
+      "code": "S05",
+      "sequence": 6,
+      "title": "Daily Big 3 & Meeting Discipline",
+      "phase": "DAY_1",
+      "activities": [
+        {
+          "type": "DAILY_BIG_3",
+          "title": "Daily Big 3",
+          "config": {},
+          "initialStatus": "DRAFT"
+        },
+        {
+          "type": "MEETING_CHECKLIST",
+          "title": "Meeting Go/No-Go",
+          "config": {},
+          "initialStatus": "DRAFT"
+        }
+      ]
+    },
+    {
+      "code": "S06",
+      "sequence": 7,
+      "title": "Delegate with Clarity",
+      "phase": "DAY_1",
+      "activities": [
+        {
+          "type": "DELEGATION_CONTRACT",
+          "title": "Delegation Contract",
+          "config": {},
+          "initialStatus": "DRAFT"
+        },
+        {
+          "type": "RACI_BUILDER",
+          "title": "RACI Builder",
+          "config": {},
+          "initialStatus": "DRAFT"
+        },
+        {
+          "type": "DELEGATION_RELAY",
+          "title": "G5 Delegation Relay",
+          "config": {
+            "game": "G5"
+          },
+          "initialStatus": "DRAFT"
+        }
+      ]
+    },
+    {
+      "code": "S07",
+      "sequence": 8,
+      "title": "Coach & Give Feedback",
+      "phase": "DAY_1",
+      "activities": [
+        {
+          "type": "GROW_COACHING",
+          "title": "GROW Coaching Sheet",
+          "config": {},
+          "initialStatus": "DRAFT"
+        },
+        {
+          "type": "SBI_FEEDBACK",
+          "title": "SBI Feedback Builder",
+          "config": {},
+          "initialStatus": "DRAFT"
+        }
+      ]
+    },
+    {
+      "code": "ARENA",
+      "sequence": 9,
+      "title": "Banking Leadership Arena",
+      "phase": "DAY_1",
+      "activities": [
+        {
+          "type": "ARENA",
+          "title": "Banking Leadership Arena",
+          "config": {
+            "contentCode": "ARENA_EVENTS_V1"
+          },
+          "initialStatus": "DRAFT"
+        }
+      ]
+    },
+    {
+      "code": "S08",
+      "sequence": 10,
+      "title": "Day 1 Reflection",
+      "phase": "DAY_1",
+      "activities": [
+        {
+          "type": "REFLECTION",
+          "title": "Day-1 Reflection",
+          "config": {
+            "private": true
+          },
+          "initialStatus": "DRAFT"
+        }
+      ]
+    },
+    {
+      "code": "S09",
+      "sequence": 11,
+      "title": "Separate Facts from Noise",
+      "phase": "DAY_2",
+      "activities": [
+        {
+          "type": "FACT_ASSUMPTION_OPINION_UNKNOWN",
+          "title": "Fact–Assumption–Opinion–Unknown",
+          "config": {},
+          "initialStatus": "DRAFT"
+        },
+        {
+          "type": "FACT_OR_FICTION",
+          "title": "G6 Fact or Fiction",
+          "config": {
+            "game": "G6"
+          },
+          "initialStatus": "DRAFT"
+        }
+      ]
+    },
+    {
+      "code": "S10",
+      "sequence": 12,
+      "title": "Find the Root Cause",
+      "phase": "DAY_2",
+      "activities": [
+        {
+          "type": "FIVE_WHYS",
+          "title": "5 Whys",
+          "config": {},
+          "initialStatus": "DRAFT"
+        },
+        {
+          "type": "FISHBONE",
+          "title": "Fishbone",
+          "config": {
+            "categories": [
+              "People",
+              "Process",
+              "Policy",
+              "System",
+              "Data",
+              "Environment"
+            ]
+          },
+          "initialStatus": "DRAFT"
+        },
+        {
+          "type": "ISSUE_TREE",
+          "title": "Issue Tree (MECE)",
+          "config": {},
+          "initialStatus": "DRAFT"
+        },
+        {
+          "type": "DETECTIVE_ROOM",
+          "title": "G7 Detective Room",
+          "config": {
+            "game": "G7"
+          },
+          "initialStatus": "DRAFT"
+        },
+        {
+          "type": "ROOT_CAUSE_RACE",
+          "title": "G8 Root Cause Race",
+          "config": {
+            "game": "G8"
+          },
+          "initialStatus": "DRAFT"
+        }
+      ]
+    },
+    {
+      "code": "S11",
+      "sequence": 13,
+      "title": "Recognize Bias",
+      "phase": "DAY_2",
+      "activities": [
+        {
+          "type": "BIAS_CHECKLIST",
+          "title": "Bias Checklist",
+          "config": {},
+          "initialStatus": "DRAFT"
+        },
+        {
+          "type": "BIAS_TRAP",
+          "title": "G9 Bias Trap",
+          "config": {
+            "game": "G9"
+          },
+          "initialStatus": "DRAFT"
+        }
+      ]
+    },
+    {
+      "code": "S12",
+      "sequence": 14,
+      "title": "Make Better Decisions",
+      "phase": "DAY_2",
+      "activities": [
+        {
+          "type": "DECISION_MATRIX",
+          "title": "Decision Matrix",
+          "config": {
+            "criteriaCount": 9
+          },
+          "initialStatus": "DRAFT"
+        },
+        {
+          "type": "DECISION_AUCTION",
+          "title": "G10 Decision Auction",
+          "config": {
+            "contentCode": "DECISION_AUCTION_V1"
+          },
+          "initialStatus": "DRAFT"
+        }
+      ]
+    },
+    {
+      "code": "S13",
+      "sequence": 15,
+      "title": "Pre-Mortem & Decision Log",
+      "phase": "DAY_2",
+      "activities": [
+        {
+          "type": "PRE_MORTEM",
+          "title": "Pre-Mortem",
+          "config": {},
+          "initialStatus": "DRAFT"
+        },
+        {
+          "type": "DECISION_LOG",
+          "title": "Decision Log",
+          "config": {},
+          "initialStatus": "DRAFT"
+        }
+      ]
+    },
+    {
+      "code": "S14",
+      "sequence": 16,
+      "title": "Execute with Accountability",
+      "phase": "DAY_2",
+      "activities": [
+        {
+          "type": "ACTION_TRACKER",
+          "title": "Action Tracker",
+          "config": {
+            "closureMode": "EXCEL_PARITY"
+          },
+          "initialStatus": "DRAFT"
+        }
+      ]
+    },
+    {
+      "code": "S15",
+      "sequence": 17,
+      "title": "60-Second Boardroom",
+      "phase": "DAY_2",
+      "activities": [
+        {
+          "type": "BOARDROOM",
+          "title": "G11 60-Second Boardroom",
+          "config": {
+            "rubricCode": "BOARDROOM",
+            "timerSec": 60
+          },
+          "initialStatus": "DRAFT"
+        }
+      ]
+    },
+    {
+      "code": "WAR_ROOM",
+      "sequence": 18,
+      "title": "Leadership War Room",
+      "phase": "DAY_2",
+      "activities": [
+        {
+          "type": "WAR_ROOM",
+          "title": "War Room",
+          "config": {
+            "rubricCode": "WAR_ROOM"
+          },
+          "initialStatus": "DRAFT"
+        }
+      ]
+    },
+    {
+      "code": "S16",
+      "sequence": 19,
+      "title": "Review & Reflection",
+      "phase": "DAY_2",
+      "activities": [
+        {
+          "type": "SELF_DIAGNOSTIC",
+          "title": "Self-Diagnostic Post",
+          "config": {
+            "mode": "POST",
+            "contentCode": "SELF_DIAGNOSTIC_V1"
+          },
+          "initialStatus": "DRAFT"
+        },
+        {
+          "type": "POST_TEST",
+          "title": "Post-Test",
+          "config": {
+            "testCode": "LTW_PRE_POST",
+            "kind": "POST"
+          },
+          "initialStatus": "DRAFT"
+        },
+        {
+          "type": "AAR_STOP_START_CONTINUE",
+          "title": "AAR & Stop-Start-Continue",
+          "config": {},
+          "initialStatus": "DRAFT"
+        },
+        {
+          "type": "REFLECTION",
+          "title": "Final Reflection",
+          "config": {
+            "private": true
+          },
+          "initialStatus": "DRAFT"
+        }
+      ]
+    },
+    {
+      "code": "S17",
+      "sequence": 20,
+      "title": "Evaluation & 30-Day Commitment",
+      "phase": "DAY_2",
+      "activities": [
+        {
+          "type": "EVALUATION_L1",
+          "title": "Evaluasi Training L1",
+          "config": {
+            "contentCode": "EVALUATION_L1_V1"
+          },
+          "initialStatus": "DRAFT"
+        },
+        {
+          "type": "THIRTY_DAY_PLAN",
+          "title": "30-Day Plan",
+          "config": {
+            "targets": 3
+          },
+          "initialStatus": "DRAFT"
+        }
+      ]
+    },
+    {
+      "code": "S18",
+      "sequence": 21,
+      "title": "Program Close",
+      "phase": "DAY_2",
+      "activities": [
+        {
+          "type": "REFLECTION",
+          "title": "Commitment to Action",
+          "config": {
+            "private": true
+          },
+          "initialStatus": "DRAFT"
+        }
+      ]
+    }
+  ]
+}
