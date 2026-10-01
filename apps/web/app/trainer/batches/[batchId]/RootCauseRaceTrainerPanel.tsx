@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useActivityRealtime } from '@/hooks/useActivityRealtime';
 
 type TeamRow={team:{id:string;name:string;number:number};answer:any;elapsedSec:number|null};
 type Feed={
@@ -14,7 +15,8 @@ function mmss(seconds:number){const m=Math.floor(seconds/60).toString().padStart
 export default function RootCauseRaceTrainerPanel({activityId}:{activityId:string}){
  const[feed,setFeed]=useState<Feed|null>(null);const[error,setError]=useState('');const[busy,setBusy]=useState('');const[duration,setDuration]=useState('');
  async function load(){const r=await fetch('/api/games/'+activityId+'/root-cause-race',{cache:'no-store'});const d=await r.json();if(r.ok){setFeed(d);setError('')}else setError(d.error||'Gagal memuat Root Cause Race')}
- useEffect(()=>{void load();const t=setInterval(()=>void load(),1500);return()=>clearInterval(t)},[activityId]);
+ useEffect(()=>{void load()},[activityId]);
+ useActivityRealtime(activityId,load,5000);
  async function control(body:any,key:string){setBusy(key);const r=await fetch('/api/games/'+activityId+'/root-cause-race',{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify(body)});const d=await r.json();setBusy('');if(!r.ok){setError(d.error||'Kontrol Root Cause Race gagal');return;}await load()}
  return <div className="mt-3 rounded-xl bg-black/20 p-3 ring-1 ring-white/10">
    <div className="flex flex-wrap items-center justify-between gap-3"><div><div className="text-xs font-bold uppercase tracking-wider text-slate-400">Root Cause Race Control</div><div className="mt-1 text-sm font-semibold">{feed?.round?feed.round.phase+' · '+Math.round(feed.round.durationSec/60)+' min':'Set durasi sebelum mulai'}</div></div>{!feed?.round||feed.round.phase==='CLOSED'?<div className="flex gap-2"><input type="number" min="1" max="60" value={duration} onChange={e=>setDuration(e.target.value)} placeholder="Menit" className="w-20 rounded-lg bg-white/10 px-2 py-2 text-xs text-white ring-1 ring-white/10"/><button disabled={busy!==''||Number(duration)<1||Number(duration)>60} onClick={()=>control({command:'START',durationSec:Number(duration)*60},'start')} className="rounded-lg bg-emerald-500/15 px-3 py-2 text-xs font-semibold text-emerald-300 disabled:opacity-30">Start</button></div>:<button disabled={busy!==''} onClick={()=>control({command:'CLOSE'},'close')} className="rounded-lg bg-white/10 px-3 py-2 text-xs font-semibold text-slate-200 disabled:opacity-30">Close</button>}</div>
