@@ -38,10 +38,10 @@ try {
   if (!Array.isArray(pokerKey) || pokerKey.length !== 8) throw new Error('Priority Poker answer key is missing');
 
   const advancedContent = await prisma.contentItem.findMany({
-    where: { tenantId: null, code: { in: ['ARENA_EVENTS_V1','WAR_ROOM_SCENARIO_V1','DECISION_AUCTION_V1','BOARDROOM_CASES_V1'] }, version: 1 },
+    where: { tenantId: null, code: { in: ['ARENA_EVENTS_V1','WAR_ROOM_SCENARIO_V1','DECISION_AUCTION_V1','BOARDROOM_CASES_V1','CALENDAR_TETRIS_V1'] }, version: 1 },
     select: { code: true, payload: true, answerKey: true },
   });
-  if (advancedContent.length !== 4) throw new Error(`Expected 4 advanced game content items, found ${advancedContent.length}`);
+  if (advancedContent.length !== 5) throw new Error(`Expected 5 advanced game content items, found ${advancedContent.length}`);
   const advancedByCode = new Map(advancedContent.map((item) => [item.code, item]));
 
   const arenaPayload = advancedByCode.get('ARENA_EVENTS_V1')?.payload;
@@ -61,6 +61,12 @@ try {
   const boardPayload = advancedByCode.get('BOARDROOM_CASES_V1')?.payload;
   if (!Array.isArray(boardPayload?.cases) || boardPayload.cases.length !== 3) throw new Error('Boardroom must have 3 Excel-derived cases');
   if (boardPayload.timerSec !== 60) throw new Error('Boardroom timer must be 60 seconds');
+
+  const calendarPayload = advancedByCode.get('CALENDAR_TETRIS_V1')?.payload;
+  const calendarKey = advancedByCode.get('CALENDAR_TETRIS_V1')?.answerKey;
+  if (!Array.isArray(calendarPayload?.cards) || calendarPayload.cards.length !== 8) throw new Error('Calendar Tetris must have 8 base cards');
+  if ('disruptions' in calendarPayload) throw new Error('Calendar Tetris disruptions leaked into public payload');
+  if (!Array.isArray(calendarKey?.disruptions) || calendarKey.disruptions.length !== 4) throw new Error('Calendar Tetris must have 4 hidden disruption cards');
 
   const delegationRubric = await prisma.rubric.findFirst({ where: { tenantId: null, code: 'DELEGATION_RELAY', version: 1 } });
   const delegationDimensions = delegationRubric?.dimensions;
