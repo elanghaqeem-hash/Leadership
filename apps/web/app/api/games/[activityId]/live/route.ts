@@ -19,12 +19,16 @@ type RoundState = {
   startedAt: string;
 };
 
-const supported = new Set(['LEADERSHIP_MIRROR','PRIORITY_POKER','FACT_OR_FICTION']);
+const supported = new Set(['LEADERSHIP_MIRROR','PRIORITY_POKER','FACT_OR_FICTION','BIAS_TRAP']);
 
-function allowedChoices(type: string) {
+function allowedChoices(type: string, content?: { payload: Prisma.JsonValue }) {
   if (type === 'LEADERSHIP_MIRROR') return ['A','B','C','D','E'];
   if (type === 'PRIORITY_POKER') return ['P1','P2','P3','P4'];
   if (type === 'FACT_OR_FICTION') return ['FACT','ASSUMPTION','OPINION','UNKNOWN'];
+  if (type === 'BIAS_TRAP') {
+    const payload = content?.payload as { choices?: unknown } | undefined;
+    return Array.isArray(payload?.choices) ? payload!.choices.map(String) : [];
+  }
   return [];
 }
 
@@ -98,7 +102,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ activit
         activity:{id:activity.id,type:activity.type,title:activity.title,status:activity.status},
         content:{code:content.code,title:content.title,version:content.version},
         round:null,
-        choices:allowedChoices(activity.type),
+        choices:allowedChoices(activity.type, content),
       });
     }
 
@@ -130,7 +134,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ activit
           : { expected:keyCard.baseAnswer }
         : activity.type === 'FACT_OR_FICTION'
           ? { expected:keyCard.answer, additionalData:keyCard.additionalData }
-          : null;
+          : activity.type === 'BIAS_TRAP'
+            ? { expected:keyCard.bias, betterQuestion:keyCard.betterQuestion }
+            : null;
     }
 
     return NextResponse.json({
@@ -138,7 +144,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ activit
       content:{code:content.code,title:content.title,version:content.version},
       round:{id:round.id,roundNo:round.roundNo,...state,openedAt:round.openedAt,closedAt:round.closedAt},
       card:publicCard,
-      choices:allowedChoices(activity.type),
+      choices:allowedChoices(activity.type, content),
       myVote:myVote ? (myVote.payload as {choice?:unknown}).choice ?? null : null,
       totalVotes:aggregate.totalVotes,
       aggregate:(revealed || isTrainer) ? aggregate.counts : null,
@@ -154,7 +160,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ activit
   try {
     const { activityId } = await params;
     const { choice } = voteSchema.parse(await req.json());
-    const { activity } = await loadGame(activityId);
+    const { activity, content } = await loadGame(activityId);
     if (activity.status !== 'OPEN') throw new HttpError('Game belum dibuka atau sudah dikunci', 409);
 
     const user = await requireUser();
@@ -172,8 +178,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ activit
     const state = stateOf(round.state);
     if (state.phase !== 'VOTING') throw new HttpError('Voting round sudah ditutup/reveal', 409);
 
-    const normalizedChoice = choice.toUpperCase();
-    if (!allowedChoices(activity.type).includes(normalizedChoice)) throw new HttpError('Pilihan vote tidak valid', 400);
+    const choices = allowedChoices(activity.type, content);
+    const normalizedChoice = choices.find((item) => item.toLowerCase() === choice.toLowerCase());
+    if (!normalizedChoice) throw new HttpError('Pilihan vote tidak valid', 400);
     const submissionKey = `game:${activityId}:${round.roundNo}:${state.stage}:${user.id}`;
     const payload = { game:true, roundNo:round.roundNo, stage:state.stage, choice:normalizedChoice };
 
