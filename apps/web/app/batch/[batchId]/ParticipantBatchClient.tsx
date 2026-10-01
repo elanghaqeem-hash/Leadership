@@ -8,6 +8,7 @@ import WarRoomParticipant from './WarRoomParticipant';
 import DecisionAuctionParticipant from './DecisionAuctionParticipant';
 import BoardroomParticipant from './BoardroomParticipant';
 import CalendarTetrisParticipant from './CalendarTetrisParticipant';
+import DelegationRelay from './DelegationRelay';
 
 type Activity = {
   id:string;
@@ -15,6 +16,7 @@ type Activity = {
   title:string;
   sequence:number;
   status:'DRAFT'|'OPEN'|'LOCKED'|'REVEALED'|'CLOSED';
+  openedAt?:string|null;
   config:any;
   session:{code:string;title:string;sequence:number}|null;
   submission:any;
@@ -111,6 +113,7 @@ function ActivityBody({batchId,activity,content,onSaved}:{batchId:string;activit
  if(activity.type==='DECISION_AUCTION')return <DecisionAuctionParticipant activityId={activity.id}/>;
  if(activity.type==='BOARDROOM')return <BoardroomParticipant activityId={activity.id}/>;
  if(activity.type==='CALENDAR_TETRIS')return <CalendarTetrisParticipant activityId={activity.id}/>;
+ if(activity.type==='DELEGATION_RELAY')return <DelegationRelay activity={activity} content={content}/>;
  if(activity.type==='PRE_TEST'||activity.type==='POST_TEST')return <TestRunner batchId={batchId} activity={activity} onSaved={onSaved}/>;
  if(activity.type==='PRIORITY_SCORECARD')return <PriorityScorecard activity={activity} onSaved={onSaved}/>;
  if(activity.type==='WEEKLY_PLANNER')return <WeeklyPlanner activity={activity} onSaved={onSaved}/>;
