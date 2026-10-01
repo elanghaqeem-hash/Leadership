@@ -166,6 +166,22 @@ async function main() {
   boardRubric = boardRubric
     ? await prisma.rubric.update({where:{id:boardRubric.id},data:{name:'60-Second Boardroom',dimensions:seed.boardroom,isPublished:true}})
     : await prisma.rubric.create({data:{tenantId:null,code:'BOARDROOM',name:'60-Second Boardroom',version:1,dimensions:seed.boardroom,isPublished:true}});
+  const delegationDimensions = [
+    {code:'what',name:'What',max:1},
+    {code:'why',name:'Why',max:1},
+    {code:'expected_outcome',name:'Expected Outcome',max:1},
+    {code:'authority',name:'Authority',max:1},
+    {code:'boundary',name:'Boundary',max:1},
+    {code:'deadline',name:'Deadline',max:1},
+    {code:'checkpoint',name:'Checkpoint',max:1},
+    {code:'evidence',name:'Evidence',max:1},
+  ];
+  const delegationRubricExisting = await prisma.rubric.findFirst({where:{tenantId:null,code:'DELEGATION_RELAY',version:1}});
+  if (delegationRubricExisting) {
+    await prisma.rubric.update({where:{id:delegationRubricExisting.id},data:{name:'Delegation Relay Checklist',dimensions:delegationDimensions,isPublished:true}});
+  } else {
+    await prisma.rubric.create({data:{tenantId:null,code:'DELEGATION_RELAY',name:'Delegation Relay Checklist',version:1,dimensions:delegationDimensions,isPublished:true}});
+  }
 
   let test = await prisma.test.findFirst({where:{tenantId:null,code:'LTW_PRE_POST',version:1}});
   test = test
