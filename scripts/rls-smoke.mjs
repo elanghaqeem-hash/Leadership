@@ -6,7 +6,9 @@ const { Client } = pg;
 const adminUrl = process.env.DATABASE_URL;
 if (!adminUrl) throw new Error('DATABASE_URL is required');
 
-const adminPgUrl = new URL(adminUrl);\nadminPgUrl.searchParams.delete('schema');\nconst admin = new Client({ connectionString: adminPgUrl.toString() });
+const adminPgUrl = new URL(adminUrl);
+adminPgUrl.searchParams.delete('schema');
+const admin = new Client({ connectionString: adminPgUrl.toString() });
 await admin.connect();
 
 const tenantA = crypto.randomUUID();
