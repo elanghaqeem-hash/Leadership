@@ -10,6 +10,7 @@ import BoardroomParticipant from './BoardroomParticipant';
 import CalendarTetrisParticipant from './CalendarTetrisParticipant';
 import DelegationRelay from './DelegationRelay';
 import DetectiveRoomParticipant from './DetectiveRoomParticipant';
+import RootCauseRaceParticipant from './RootCauseRaceParticipant';
 
 type Activity = {
   id:string;
@@ -116,6 +117,7 @@ function ActivityBody({batchId,activity,content,onSaved}:{batchId:string;activit
  if(activity.type==='CALENDAR_TETRIS')return <CalendarTetrisParticipant activityId={activity.id}/>;
  if(activity.type==='DELEGATION_RELAY')return <DelegationRelay activity={activity} content={content}/>;
  if(activity.type==='DETECTIVE_ROOM')return <DetectiveRoomParticipant activityId={activity.id}/>;
+ if(activity.type==='ROOT_CAUSE_RACE')return <RootCauseRaceParticipant activityId={activity.id}/>;
  if(activity.type==='PRE_TEST'||activity.type==='POST_TEST')return <TestRunner batchId={batchId} activity={activity} onSaved={onSaved}/>;
  if(activity.type==='PRIORITY_SCORECARD')return <PriorityScorecard activity={activity} onSaved={onSaved}/>;
  if(activity.type==='WEEKLY_PLANNER')return <WeeklyPlanner activity={activity} onSaved={onSaved}/>;
