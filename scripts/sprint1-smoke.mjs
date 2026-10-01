@@ -44,10 +44,10 @@ try {
   if (!Array.isArray(biasPayload?.choices) || biasPayload.choices.length < 4) throw new Error('Bias Trap choices are missing');
 
   const advancedContent = await prisma.contentItem.findMany({
-    where: { tenantId: null, code: { in: ['ARENA_EVENTS_V1','WAR_ROOM_SCENARIO_V1','DECISION_AUCTION_V1','BOARDROOM_CASES_V1','CALENDAR_TETRIS_V1','DETECTIVE_ROOM_V1'] }, version: 1 },
+    where: { tenantId: null, code: { in: ['ARENA_EVENTS_V1','WAR_ROOM_SCENARIO_V1','DECISION_AUCTION_V1','BOARDROOM_CASES_V1','CALENDAR_TETRIS_V1','DETECTIVE_ROOM_V1','ROOT_CAUSE_RACE_V1'] }, version: 1 },
     select: { code: true, payload: true, answerKey: true },
   });
-  if (advancedContent.length !== 6) throw new Error(`Expected 6 advanced game content items, found ${advancedContent.length}`);
+  if (advancedContent.length !== 7) throw new Error(`Expected 7 advanced game content items, found ${advancedContent.length}`);
   const advancedByCode = new Map(advancedContent.map((item) => [item.code, item]));
 
   const arenaPayload = advancedByCode.get('ARENA_EVENTS_V1')?.payload;
@@ -79,6 +79,10 @@ try {
   if (!Array.isArray(detectivePayload?.cards) || detectivePayload.cards.length !== 12) throw new Error('Detective Room must have 12 evidence topics');
   if (detectivePayload.cards.some((card) => 'evidence' in card || 'category' in card)) throw new Error('Detective Room evidence leaked before purchase');
   if (!Array.isArray(detectiveKey?.cards) || detectiveKey.cards.length !== 12 || !detectiveKey?.diagnosisKey) throw new Error('Detective Room hidden key is incomplete');
+
+  const rootCausePayload = advancedByCode.get('ROOT_CAUSE_RACE_V1')?.payload;
+  if (!Array.isArray(rootCausePayload?.evidence) || rootCausePayload.evidence.length !== 6) throw new Error('Root Cause Race must have 6 Excel-derived evidence rows');
+  if (rootCausePayload?.framework?.fiveWhys !== 5) throw new Error('Root Cause Race must preserve 5 Whys structure');
 
   const delegationRubric = await prisma.rubric.findFirst({ where: { tenantId: null, code: 'DELEGATION_RELAY', version: 1 } });
   const delegationDimensions = delegationRubric?.dimensions;
