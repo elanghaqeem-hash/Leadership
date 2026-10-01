@@ -151,16 +151,17 @@ const actionTrackerSchema = z.object({
   })).max(100),
 });
 
-function ensurePayloadSize(payload: unknown) {
-  const bytes = Buffer.byteLength(JSON.stringify(payload), 'utf8');
-  if (bytes > 64 * 1024) throw new Error('Submission payload exceeds 64 KB');
+function payloadSizeBytes(payload: unknown) {
+  return Buffer.byteLength(JSON.stringify(payload), 'utf8');
 }
 
 export async function POST(req: Request, { params }: { params: Promise<{ activityId: string }> }) {
   try {
     const { activityId } = await params;
     const { payload } = bodySchema.parse(await req.json());
-    ensurePayloadSize(payload);
+    if (payloadSizeBytes(payload) > 64 * 1024) {
+      return NextResponse.json({ error: 'Submission payload maksimal 64 KB' }, { status: 413 });
+    }
 
     const activity = await prisma.activity.findUnique({
       where: { id: activityId },
