@@ -385,7 +385,8 @@
           "title": "G11 60-Second Boardroom",
           "config": {
             "rubricCode": "BOARDROOM",
-            "timerSec": 60
+            "timerSec": 60,
+            "contentCode": "BOARDROOM_CASES_V1"
           },
           "initialStatus": "DRAFT"
         }
