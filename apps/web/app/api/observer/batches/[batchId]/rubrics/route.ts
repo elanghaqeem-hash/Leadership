@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '@ltw/db';
 import { assertPermission, requireUser } from '@/lib/auth';
 import { HttpError, jsonError } from '@/lib/http';
+import { publishBatchEvent } from '@/lib/realtime';
 
 const scoreSchema = z.object({
   activityId: z.string().uuid(),
@@ -150,6 +151,7 @@ export async function POST(req:Request,{params}:{params:Promise<{batchId:string}
 
   const total=spec.reduce((sum,item)=>sum+input.values[item.code],0);
   const max=spec.reduce((sum,item)=>sum+item.max,0);
+  publishBatchEvent(batchId, 'RUBRIC_SCORE', input.activityId);
   return NextResponse.json({ok:true,total,max,percent:max?total/max*100:0});
  }catch(e){return jsonError(e)}
 }
