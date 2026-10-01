@@ -22,10 +22,10 @@ try {
   if (contentCount < 8) throw new Error(`Expected at least 8 published content items, found ${contentCount}`);
 
   const liveGames = await prisma.contentItem.findMany({
-    where: { tenantId: null, code: { in: ['LEADERSHIP_MIRROR_V1','PRIORITY_POKER_V1','FACT_OR_FICTION_V1'] }, version: 1 },
+    where: { tenantId: null, code: { in: ['LEADERSHIP_MIRROR_V1','PRIORITY_POKER_V1','FACT_OR_FICTION_V1','BIAS_TRAP_V1'] }, version: 1 },
     select: { code: true, payload: true, answerKey: true },
   });
-  if (liveGames.length !== 3) throw new Error(`Expected 3 structured live-game content items, found ${liveGames.length}`);
+  if (liveGames.length !== 4) throw new Error(`Expected 4 structured live-game content items, found ${liveGames.length}`);
   const byCode = new Map(liveGames.map((item) => [item.code, item]));
   const mirrorCards = byCode.get('LEADERSHIP_MIRROR_V1')?.payload?.cards;
   const pokerCards = byCode.get('PRIORITY_POKER_V1')?.payload?.cards;
@@ -36,6 +36,12 @@ try {
   if (pokerCards.some((card) => 'baseAnswer' in card || 'twistExpected' in card)) throw new Error('Priority Poker answer key leaked into public payload');
   const pokerKey = byCode.get('PRIORITY_POKER_V1')?.answerKey?.cards;
   if (!Array.isArray(pokerKey) || pokerKey.length !== 8) throw new Error('Priority Poker answer key is missing');
+
+  const biasPayload = byCode.get('BIAS_TRAP_V1')?.payload;
+  const biasCards = biasPayload?.cards;
+  if (!Array.isArray(biasCards) || biasCards.length !== 6) throw new Error('Bias Trap must have 6 Excel-derived cards');
+  if (biasCards.some((card) => 'bias' in card || 'betterQuestion' in card)) throw new Error('Bias Trap answer key leaked into public payload');
+  if (!Array.isArray(biasPayload?.choices) || biasPayload.choices.length < 4) throw new Error('Bias Trap choices are missing');
 
   const advancedContent = await prisma.contentItem.findMany({
     where: { tenantId: null, code: { in: ['ARENA_EVENTS_V1','WAR_ROOM_SCENARIO_V1','DECISION_AUCTION_V1','BOARDROOM_CASES_V1','CALENDAR_TETRIS_V1'] }, version: 1 },
