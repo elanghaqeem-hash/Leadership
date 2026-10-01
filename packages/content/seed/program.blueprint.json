@@ -281,7 +281,8 @@
           "type": "DETECTIVE_ROOM",
           "title": "G7 Detective Room",
           "config": {
-            "game": "G7"
+            "game": "G7",
+            "contentCode": "DETECTIVE_ROOM_V1"
           },
           "initialStatus": "DRAFT"
         },
