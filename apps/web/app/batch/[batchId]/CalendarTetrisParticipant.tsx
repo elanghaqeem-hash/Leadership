@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useActivityRealtime } from '@/hooks/useActivityRealtime';
 
 type Card={id:string;kind:string;card:string};
 type Placement={cardId:string;day:'Senin'|'Selasa'|'Rabu'|'Kamis'|'Jumat';startTime:string;note:string};
@@ -16,7 +17,8 @@ const days=['Senin','Selasa','Rabu','Kamis','Jumat'] as const;
 export default function CalendarTetrisParticipant({activityId}:{activityId:string}){
  const[feed,setFeed]=useState<Feed|null>(null);const[rows,setRows]=useState<Placement[]>([]);const[initialized,setInitialized]=useState(false);const[msg,setMsg]=useState('');const[busy,setBusy]=useState(false);
  async function load(){const r=await fetch('/api/games/'+activityId+'/calendar-tetris',{cache:'no-store'});const d=await r.json();if(r.ok){setFeed(d);if(!initialized){const old=d.schedule?.placements||[];setRows((d.cards||[]).map((c:Card)=>old.find((x:Placement)=>x.cardId===c.id)||{cardId:c.id,day:'Senin',startTime:'08:00',note:''}));setInitialized(true)}}else setMsg(d.error||'Gagal memuat Calendar Tetris')}
- useEffect(()=>{void load();const t=setInterval(()=>void load(),1500);return()=>clearInterval(t)},[activityId,initialized]);
+ useEffect(()=>{void load()},[activityId,initialized]);
+ useActivityRealtime(activityId,load,5000);
  async function save(){setBusy(true);const r=await fetch('/api/games/'+activityId+'/calendar-tetris',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({placements:rows})});const d=await r.json();setBusy(false);if(!r.ok){setMsg(d.error||'Gagal menyimpan kalender');return;}setMsg('Kalender tim tersimpan · versi '+d.version);await load()}
  if(!feed)return <div className="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">{msg||'Memuat Calendar Tetris…'}</div>;
  if(!feed.round)return <div className="mt-4 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">Trainer belum memulai Calendar Tetris.</div>;
