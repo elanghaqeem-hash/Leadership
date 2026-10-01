@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useActivityRealtime } from '@/hooks/useActivityRealtime';
 
 type Program={id:string;name:string;cost:number;benefit:number;risk:number;uncertainty:number};
 type Feed={
@@ -17,7 +18,8 @@ type Feed={
 export default function DecisionAuctionParticipant({activityId}:{activityId:string}){
  const[feed,setFeed]=useState<Feed|null>(null);const[selected,setSelected]=useState<string[]>([]);const[initialized,setInitialized]=useState(false);const[msg,setMsg]=useState('');const[busy,setBusy]=useState(false);
  async function load(){const r=await fetch('/api/games/'+activityId+'/decision-auction',{cache:'no-store'});const d=await r.json();if(r.ok){setFeed(d);if(!initialized){setSelected(d.mySelection||[]);setInitialized(true)}}else setMsg(d.error||'Gagal memuat Decision Auction')}
- useEffect(()=>{void load();const t=setInterval(()=>void load(),1500);return()=>clearInterval(t)},[activityId,initialized]);
+ useEffect(()=>{void load()},[activityId,initialized]);
+ useActivityRealtime(activityId,load,5000);
  useEffect(()=>{if(feed?.round?.phase==='CHOOSING')setSelected(feed.mySelection||[])},[feed?.round?.round]);
  const status=useMemo(()=>{if(!feed)return null;const programs=feed.programs.filter(p=>selected.includes(p.id));const cost=programs.reduce((s,p)=>s+p.cost,0);return{cost,count:programs.length,valid:cost<=feed.budget&&programs.length<=feed.maxActive}},[feed,selected]);
  async function save(){setBusy(true);const r=await fetch('/api/games/'+activityId+'/decision-auction',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({activeProgramIds:selected})});const d=await r.json();setBusy(false);if(!r.ok){setMsg(d.error||'Gagal menyimpan pilihan');return;}setMsg(d.status?.valid?'Pilihan tim tersimpan.':'Pilihan tersimpan tetapi melanggar batas; NET final dapat menjadi 0.');await load()}
