@@ -39,6 +39,17 @@ export async function GET(_req: Request, { params }: { params: Promise<{ batchId
         })
       : [];
 
+    const test = membership?.role === 'PARTICIPANT'
+      ? await prisma.test.findFirst({ where: { tenantId: null, code: 'LTW_PRE_POST', version: 1 }, select: { id: true } })
+      : null;
+    const testAttempts = test
+      ? await prisma.testAttempt.findMany({
+          where: { batchId, userId: user.id, testId: test.id },
+          select: { kind: true, score: true, startedAt: true, submittedAt: true },
+        })
+      : [];
+    const attemptsByKind = new Map(testAttempts.map((a) => [a.kind, a]));
+
     const submissions = membership?.role === 'PARTICIPANT'
       ? await prisma.submission.findMany({
           where: { batchId, userId: user.id, ownerType: 'USER' },
@@ -61,6 +72,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ batchId
         contentVersion: a.contentVersion,
         session: a.session,
         submission: byActivity.get(a.id) ?? null,
+        testAttempt: a.type === 'PRE_TEST'
+          ? attemptsByKind.get('PRE') ?? null
+          : a.type === 'POST_TEST'
+            ? attemptsByKind.get('POST') ?? null
+            : null,
       })),
     });
   } catch (e) {
