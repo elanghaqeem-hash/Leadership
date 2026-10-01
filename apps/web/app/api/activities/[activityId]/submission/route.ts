@@ -6,6 +6,7 @@ import { actionTrackerSummary, evaluatePlannerBuffer, evaluatePlannerFocus, scor
 import { buildSbiFeedback, rankDecisionMatrix, scoreMeetingChecklist, summarizeMinuteAudit, summarizePreMortem } from '@ltw/activities';
 import { assertPermission, requireUser } from '@/lib/auth';
 import { jsonError } from '@/lib/http';
+import { publishBatchEvent } from '@/lib/realtime';
 
 const bodySchema = z.object({ payload: z.unknown() });
 const scale = z.number().int().min(1).max(5);
@@ -327,6 +328,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ activit
       },
     });
 
+    publishBatchEvent(activity.batchId, 'SUBMISSION', submission.id);
     return NextResponse.json({
       ok: true,
       submission: {
