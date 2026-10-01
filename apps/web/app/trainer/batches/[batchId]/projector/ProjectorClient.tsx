@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useBatchRealtime } from '@/hooks/useBatchRealtime';
 
 type Activity={id:string;title:string;type:string;status:string;openedAt?:string|null};
 type Session={activities:Activity[]};
@@ -65,7 +66,8 @@ export default function ProjectorClient({batchId}:{batchId:string}){
      }else { setGame(null); setArena(null); setWar(null); setAuction(null); setBoard(null); setCalendar(null); setRootCause(null); }
    }
  }
- useEffect(()=>{void load();const p=setInterval(()=>void load(),1500);const t=setInterval(()=>setNow(Date.now()),1000);return()=>{clearInterval(p);clearInterval(t)}},[batchId]);
+ useEffect(()=>{void load();const t=setInterval(()=>setNow(Date.now()),1000);return()=>clearInterval(t)},[batchId]);
+ useBatchRealtime(batchId,load,5000);
  const active=useMemo(()=>feed?.sessions.flatMap(s=>s.activities).find(a=>a.status==='OPEN'||a.status==='REVEALED')??null,[feed]);
  const elapsed=active?.openedAt?Math.max(0,Math.floor((now-new Date(active.openedAt).getTime())/1000)):0;
  const prompt=game?.card?.situation||game?.card?.prompt||game?.card?.statement||'';
