@@ -17,6 +17,11 @@ enum MagicLinkPurpose {
   ACCOUNT_ACTIVATION
 }
 
+enum MfaChallengePurpose {
+  LOGIN
+  ENROLLMENT
+}
+
 enum ImportJobStatus {
   PENDING
   PROCESSING
@@ -160,6 +165,8 @@ model User {
   auditLogs       AuditLog[]
   authSessions    AuthSession[]
   magicLinkTokens MagicLinkToken[]
+  mfaCredential   MfaCredential?
+  mfaChallenges   MfaChallenge[]
   consents        ConsentRecord[]
   importJobs      ParticipantImportJob[] @relation("ImportCreatedBy")
 }
@@ -666,6 +673,31 @@ model MagicLinkToken {
   consumedAt  DateTime?
   createdAt   DateTime         @default(now())
   user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, purpose, expiresAt])
+}
+
+model MfaCredential {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @unique @db.Uuid
+  encryptedSecret String
+  iv              String
+  authTag         String
+  enabledAt       DateTime?
+  lastUsedCounter BigInt?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model MfaChallenge {
+  id         String              @id @default(uuid()) @db.Uuid
+  userId     String              @db.Uuid
+  purpose    MfaChallengePurpose
+  tokenHash  String              @unique
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime            @default(now())
+  user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@index([userId, purpose, expiresAt])
 }
 
