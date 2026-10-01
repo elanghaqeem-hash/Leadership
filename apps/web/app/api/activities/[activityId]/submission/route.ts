@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from '@ltw/db';
 import { evaluatePlannerBuffer, evaluatePlannerFocus, scorePriority } from '@ltw/scoring';
-import { assertPermission } from '@/lib/auth';
+import { assertPermission, requireUser } from '@/lib/auth';
 import { jsonError } from '@/lib/http';
 
 const bodySchema = z.object({ payload: z.unknown() });
@@ -51,19 +51,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ activit
     });
     if (!activity) return NextResponse.json({ error: 'Aktivitas tidak ditemukan' }, { status: 404 });
 
+    const currentUser = await requireUser();
     const actor = await assertPermission('OWN_SUBMISSION_WRITE', {
       tenantId: activity.tenantId,
       batchId: activity.batchId,
-      resourceUserId: (await import('@/lib/auth')).then ? undefined : undefined,
-    }).catch(async () => {
-      // assertPermission needs the resource owner id to evaluate PARTICIPANT ownership.
-      const { requireUser } = await import('@/lib/auth');
-      const user = await requireUser();
-      return assertPermission('OWN_SUBMISSION_WRITE', {
-        tenantId: activity.tenantId,
-        batchId: activity.batchId,
-        resourceUserId: user.id,
-      });
+      resourceUserId: currentUser.id,
     });
 
     if (activity.status !== 'OPEN') {
