@@ -143,7 +143,23 @@ async function main() {
     payload:{events:seed.arena.events.map((x:any)=>({no:x.no,event:x.event,dimension:x.dimension,doMinutes:x.doMinutes}))},
     answerKey:{events:seed.arena.events.map((x:any)=>({no:x.no,best:x.best,acceptable:x.acceptable}))},
   }));
-  content.push(await upsertGlobalContent({code:'DECISION_AUCTION_V1',type:'GAME_CARDS',title:'Decision Auction',payload:seed.decisionAuction}));
+  content.push(await upsertGlobalContent({
+    code:'DECISION_AUCTION_V1',
+    type:'TEAM_SIMULATION',
+    title:'Decision Auction',
+    payload:{
+      budget:seed.decisionAuction.budget,
+      switchingRate:seed.decisionAuction.switchingRate,
+      maxActive:seed.decisionAuction.maxActive,
+      programs:seed.decisionAuction.programs.map((p:any)=>({
+        id:p.id,name:p.name,cost:p.cost,benefit:p.benefit,risk:p.risk,uncertainty:p.uncertainty,
+      })),
+    },
+    answerKey:{
+      roundInfo:seed.decisionAuction.roundInfo,
+      factors:Object.fromEntries(seed.decisionAuction.programs.map((p:any)=>[p.id,p.factors])),
+    },
+  }));
   content.push(await upsertGlobalContent({code:'GAME_CARDS_EXCEL_V1',type:'GAME_CARDS_RAW',title:'Kartu Game dari Excel',payload:seed.gameCardsRaw}));
   content.push(await upsertGlobalContent({
     code:'LEADERSHIP_MIRROR_V1',
