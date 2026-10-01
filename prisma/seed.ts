@@ -80,6 +80,9 @@ function structuredGameContent() {
     no:idx+1, label:String(r[0] ?? ''), event:String(r[1] ?? ''),
   }));
 
+  const delegationRelayRows = rowsAfterSectionHeading('Game 5 · Delegation Relay', 'Bagian');
+  const delegationRelay = Object.fromEntries(delegationRelayRows.map((r)=>[String(r[0]??''),String(r[1]??'')]));
+
   const factRows = rowsAfterGameHeading('Game 6 · Fact or Fiction');
   const factCards = factRows.map((r) => ({
     no: Number(r[0]),
@@ -100,7 +103,7 @@ function structuredGameContent() {
     observerFocus:String(r[2] ?? ''),
   }));
 
-  return { mirrorCards, pokerCards, calendarBase, calendarDisruptions, factCards, boardCases, warInitial, warEvents };
+  return { mirrorCards, pokerCards, calendarBase, calendarDisruptions, delegationRelay, factCards, boardCases, warInitial, warEvents };
 }
 
 async function main() {
@@ -191,6 +194,17 @@ async function main() {
     title:'Calendar Tetris',
     payload:{cards:gameContent.calendarBase},
     answerKey:{disruptions:gameContent.calendarDisruptions},
+  }));
+  content.push(await upsertGlobalContent({
+    code:'DELEGATION_RELAY_V1',
+    type:'TEAM_SIMULATION',
+    title:'Delegation Relay',
+    payload:{
+      task:gameContent.delegationRelay['Tugas']||'',
+      rule:gameContent.delegationRelay['Aturan']||'',
+      observerChecklist:gameContent.delegationRelay['Observer cek']||'',
+      timerSec:1200,
+    },
   }));
   content.push(await upsertGlobalContent({
     code:'FACT_OR_FICTION_V1',
