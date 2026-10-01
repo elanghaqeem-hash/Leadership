@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useActivityRealtime } from '@/hooks/useActivityRealtime';
 
 const COLS=['Priority','Decision','Delegation','Escalation','Communication','Action'] as const;
 type Col=typeof COLS[number];
