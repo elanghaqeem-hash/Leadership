@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@ltw/db';
 import { assertPermission, hashToken } from '@/lib/auth';
-import { jsonError } from '@/lib/http';
+import { HttpError, jsonError } from '@/lib/http';
 
 const roleSchema = z.enum(['LEAD_TRAINER','CO_FACILITATOR','SPONSOR_VIEWER']);
 const createSchema = z.object({
@@ -49,7 +49,7 @@ export async function POST(req:Request,{params}:{params:Promise<{batchId:string}
 
       const existing=await tx.batchMembership.findUnique({where:{batchId_userId:{batchId,userId:user.id}}});
       if(existing && ['PARTICIPANT','LINE_MANAGER'].includes(existing.role)){
-        throw new Error(`User ${input.email} sudah memiliki role ${existing.role} pada batch ini`);
+        throw new HttpError(`User ${input.email} sudah memiliki role ${existing.role} pada batch ini`,409);
       }
       const membership=await tx.batchMembership.upsert({
         where:{batchId_userId:{batchId,userId:user.id}},
