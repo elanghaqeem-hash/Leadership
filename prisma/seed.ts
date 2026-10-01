@@ -8,6 +8,7 @@ const prisma = new PrismaClient();
 const root = path.resolve(process.cwd());
 const seedPath = path.join(root, 'packages', 'content', 'seed', 'toolkit.seed.json');
 const seed = JSON.parse(await fs.readFile(seedPath, 'utf8'));
+const blueprint = JSON.parse(await fs.readFile(path.join(root, 'packages', 'content', 'seed', 'program.blueprint.json'), 'utf8'));
 
 const stableHash = (value: unknown) => crypto.createHash('sha256').update(JSON.stringify(value)).digest('hex');
 
@@ -56,6 +57,7 @@ async function main() {
   });
 
   const content = [] as Awaited<ReturnType<typeof upsertGlobalContent>>[];
+  content.push(await upsertGlobalContent({code:'PROGRAM_BLUEPRINT_V1',type:'PROGRAM_BLUEPRINT',title:blueprint.title,payload:blueprint}));
   content.push(await upsertGlobalContent({code:'SELF_DIAGNOSTIC_V1',type:'SELF_DIAGNOSTIC',title:'Self-Diagnostic',payload:seed.selfDiagnostic}));
   content.push(await upsertGlobalContent({code:'PRIORITY_SCORECARD_V1',type:'TOOL_CONFIG',title:'Priority Scorecard',payload:seed.priorityScorecard}));
   content.push(await upsertGlobalContent({code:'WEEKLY_PLANNER_V1',type:'TOOL_CONFIG',title:'Weekly Planner',payload:seed.weeklyPlanner}));
