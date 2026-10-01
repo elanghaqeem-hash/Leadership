@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import StructuredTools, { STRUCTURED_TYPES } from './StructuredTools';
 import LiveGameVote from './LiveGameVote';
+import ArenaParticipant from './ArenaParticipant';
 
 type Activity = {
   id:string;
@@ -101,6 +102,7 @@ const LIVE_GAME_TYPES=new Set(['LEADERSHIP_MIRROR','PRIORITY_POKER','FACT_OR_FIC
 function ActivityBody({batchId,activity,content,onSaved}:{batchId:string;activity:Activity;content:any;onSaved:()=>void}){
  if(activity.type==='SELF_DIAGNOSTIC')return <SelfDiagnostic activity={activity} content={content} onSaved={onSaved}/>;
  if(LIVE_GAME_TYPES.has(activity.type))return <LiveGameVote activityId={activity.id}/>;
+ if(activity.type==='ARENA')return <ArenaParticipant activityId={activity.id}/>;
  if(activity.type==='PRE_TEST'||activity.type==='POST_TEST')return <TestRunner batchId={batchId} activity={activity} onSaved={onSaved}/>;
  if(activity.type==='PRIORITY_SCORECARD')return <PriorityScorecard activity={activity} onSaved={onSaved}/>;
  if(activity.type==='WEEKLY_PLANNER')return <WeeklyPlanner activity={activity} onSaved={onSaved}/>;
