@@ -1,4 +1,5 @@
 import { randomInt } from 'node:crypto';
+import { Prisma } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { prisma } from '@ltw/db';
 import { assertPermission, requireUser } from '@/lib/auth';
@@ -30,7 +31,7 @@ export async function POST(req:Request){
   const joinCode=await uniqueJoinCode();
   const batch=await prisma.$transaction(async tx=>{
     const created=await tx.batch.create({data:{tenantId:input.tenantId,programVersionId:version!.id,code:input.code,name:input.name,joinCode,startDate:input.startDate,endDate:input.endDate,location:input.location,teamCount:input.teamCount,participantTarget:input.participantTarget,status:'DRAFT'}});
-    if(version!.scoringConfig)await tx.batchScoringConfig.create({data:{batchId:created.id,schemaVersion:version!.scoringConfig.schemaVersion,config:version!.scoringConfig.config,sourceHash:version!.scoringConfig.configHash}});
+    if(version!.scoringConfig)await tx.batchScoringConfig.create({data:{batchId:created.id,schemaVersion:version!.scoringConfig.schemaVersion,config:version!.scoringConfig.config as Prisma.InputJsonValue,sourceHash:version!.scoringConfig.configHash}});
     await tx.team.createMany({data:Array.from({length:input.teamCount},(_,i)=>({tenantId:input.tenantId,batchId:created.id,name:`Tim ${i+1}`,number:i+1}))});
     const actorTenantMembership=await tx.tenantMembership.findUnique({where:{tenantId_userId:{tenantId:input.tenantId,userId:actor.id}}});
     if(actorTenantMembership?.role==='PROGRAM_ADMIN') await tx.batchMembership.upsert({where:{batchId_userId:{batchId:created.id,userId:actor.id}},create:{batchId:created.id,userId:actor.id,role:'PROGRAM_ADMIN'},update:{role:'PROGRAM_ADMIN',isActive:true}});
