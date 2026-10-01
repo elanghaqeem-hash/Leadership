@@ -1,6 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { useBatchRealtime } from '@/hooks/useBatchRealtime';
 import StructuredTools, { STRUCTURED_TYPES } from './StructuredTools';
 import LiveGameVote from './LiveGameVote';
 import ArenaParticipant from './ArenaParticipant';
@@ -128,7 +129,8 @@ function ActivityBody({batchId,activity,content,onSaved}:{batchId:string;activit
 export default function ParticipantBatchClient({batchId}:{batchId:string}){
  const[feed,setFeed]=useState<Feed|null>(null);const[error,setError]=useState('');const[loading,setLoading]=useState(true);
  async function load(){setLoading(true);const r=await fetch(`/api/batches/${batchId}/activities`,{cache:'no-store'});const d=await r.json();if(!r.ok){setError(d.error||'Gagal memuat aktivitas');setLoading(false);return;}setFeed(d);setLoading(false)}
- useEffect(()=>{load()},[batchId]);
+ useEffect(()=>{void load()},[batchId]);
+ useBatchRealtime(batchId,load,5000);
  const progress=useMemo(()=>{if(!feed)return{done:0,total:0};const relevant=feed.activities.filter(a=>a.status!=='DRAFT');return{done:relevant.filter(a=>Boolean(a.submission)||Boolean(a.testAttempt?.submittedAt)).length,total:relevant.length}},[feed]);
  if(loading)return <main className="min-h-screen bg-slate-50 p-4"><div className="mx-auto max-w-3xl animate-pulse space-y-4"><div className="h-28 rounded-3xl bg-slate-200"/><div className="h-40 rounded-2xl bg-slate-200"/></div></main>;
  if(!feed)return <main className="p-6 text-red-700">{error||'Data tidak tersedia'}</main>;
