@@ -142,6 +142,19 @@ const decisionLogSchema = z.object({
   owner: z.string().trim().min(1).max(200),
   reviewDate: z.string().min(8).max(30),
 });
+const reflectionSchema = z.object({
+  reflection: z.string().trim().min(1).max(5000),
+  keyTakeaway: z.string().trim().max(2000).optional().default(''),
+  commitment: z.string().trim().max(2000).optional().default(''),
+});
+const aarSchema = z.object({
+  whatHappened: z.string().trim().min(1).max(3000),
+  whatWorked: z.string().trim().min(1).max(3000),
+  whatToImprove: z.string().trim().min(1).max(3000),
+  stop: z.string().trim().min(1).max(2000),
+  start: z.string().trim().min(1).max(2000),
+  continue: z.string().trim().min(1).max(2000),
+});
 const actionTrackerSchema = z.object({
   items: z.array(z.object({
     action: z.string().max(1000).default(''),
@@ -281,6 +294,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ activit
       const today = new Date().toISOString().slice(0, 10);
       normalized = parsed;
       scoreDetail = actionTrackerSummary(parsed.items, today) as unknown as Prisma.InputJsonValue;
+    } else if (activity.type === 'REFLECTION') {
+      normalized = reflectionSchema.parse(payload);
+    } else if (activity.type === 'AAR_STOP_START_CONTINUE') {
+      normalized = aarSchema.parse(payload);
     }
 
     const isPrivateReflection = activity.type === 'REFLECTION';
