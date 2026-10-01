@@ -14,7 +14,7 @@
     "test": "vitest run",
     "test:scoring": "vitest run packages/scoring/test/scoring.test.ts",
     "test:rbac": "vitest run packages/authz/test/rbac.matrix.test.ts",
-    "test:sprint1": "vitest run packages/authz/test/rbac.matrix.test.ts packages/imports/test/participants.test.ts packages/scoring/test/scoring.test.ts",
+    "test:sprint1": "vitest run packages/authz/test/rbac.matrix.test.ts packages/imports/test/participants.test.ts packages/scoring/test/scoring.test.ts apps/web/test/mfa.test.ts",
     "toolkit:extract": "node scripts/extract-toolkit.mjs",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
@@ -22,7 +22,10 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "db:push": "prisma db push --skip-generate",
-    "test:sprint1:db": "node scripts/sprint1-smoke.mjs"
+    "test:sprint1:db": "node scripts/sprint1-smoke.mjs",
+    "test:mfa": "vitest run apps/web/test/mfa.test.ts",
+    "test:rls": "node scripts/rls-smoke.mjs",
+    "test:auth:http": "node scripts/auth-http-smoke.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.16.2",
@@ -37,7 +40,9 @@
     "prisma": "^6.16.2",
     "tsx": "^4.20.6",
     "typescript": "^5.9.2",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "pg": "^8.16.3",
+    "@types/pg": "^8.15.5"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
