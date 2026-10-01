@@ -2,17 +2,39 @@
   "name": "leadership-that-works",
   "private": true,
   "type": "module",
+  "workspaces": ["apps/*", "packages/*"],
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "dev": "npm --workspace @ltw/web run dev",
+    "build": "npm --workspace @ltw/web run build",
+    "lint": "npm --workspace @ltw/web run lint",
+    "typecheck": "tsc -p tsconfig.json --noEmit && npm --workspace @ltw/web run typecheck",
     "test": "vitest run",
     "test:scoring": "vitest run packages/scoring/test/scoring.test.ts",
-    "toolkit:extract": "node scripts/extract-toolkit.mjs"
+    "test:rbac": "vitest run packages/authz/test/rbac.matrix.test.ts",
+    "test:sprint1": "vitest run packages/authz/test/rbac.matrix.test.ts packages/imports/test/participants.test.ts packages/scoring/test/scoring.test.ts",
+    "toolkit:extract": "node scripts/extract-toolkit.mjs",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:studio": "prisma studio"
   },
   "dependencies": {
-    "exceljs": "^4.4.0"
+    "@prisma/client": "^6.16.2",
+    "argon2": "^0.44.0",
+    "csv-parse": "^6.1.0",
+    "exceljs": "^4.4.0",
+    "jose": "^6.1.0",
+    "zod": "^4.1.11"
   },
   "devDependencies": {
-    "typescript": "^5.8.3",
+    "@types/node": "^22.15.0",
+    "prisma": "^6.16.2",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.2",
     "vitest": "^3.2.4"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   }
 }

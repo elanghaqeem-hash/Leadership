@@ -1,0 +1,1 @@
+{"name":"@ltw/authz","private":true,"type":"module","exports":{".":"./src/matrix.ts"}}

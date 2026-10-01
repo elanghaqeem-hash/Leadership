@@ -12,6 +12,19 @@ enum PlatformRole {
   STANDARD
 }
 
+enum MagicLinkPurpose {
+  MANAGER_LOGIN
+  ACCOUNT_ACTIVATION
+}
+
+enum ImportJobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  COMPLETED_WITH_ERRORS
+  FAILED
+}
+
 enum TenantRole {
   PROGRAM_ADMIN
   SPONSOR_VIEWER
@@ -125,12 +138,11 @@ model User {
   id              String        @id @default(uuid()) @db.Uuid
   email           String        @unique
   name            String
-  employeeNo      String?
-  unit            String?
-  title           String?
   platformRole    PlatformRole  @default(STANDARD)
   passwordHash    String?
   mfaEnabled      Boolean       @default(false)
+  isActive        Boolean       @default(true)
+  emailVerifiedAt DateTime?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
   tenantMemberships TenantMembership[]
@@ -146,6 +158,10 @@ model User {
   followUpsAuthored FollowUp[] @relation("FollowUpAuthor")
   evaluationsL1   EvaluationL1[]
   auditLogs       AuditLog[]
+  authSessions    AuthSession[]
+  magicLinkTokens MagicLinkToken[]
+  consents        ConsentRecord[]
+  importJobs      ParticipantImportJob[] @relation("ImportCreatedBy")
 }
 
 model Tenant {
@@ -170,6 +186,8 @@ model Tenant {
   impactMetrics   ImpactMetric[]
   evaluationsL1   EvaluationL1[]
   auditLogs       AuditLog[]
+  participantImportJobs ParticipantImportJob[]
+  consents        ConsentRecord[]
 }
 
 model TenantMembership {
@@ -177,6 +195,12 @@ model TenantMembership {
   tenantId  String     @db.Uuid
   userId    String     @db.Uuid
   role      TenantRole @default(MEMBER)
+  displayName String?
+  employeeNo String?
+  unit       String?
+  title      String?
+  invitedAt  DateTime?
+  activatedAt DateTime?
   createdAt DateTime   @default(now())
   tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -252,6 +276,7 @@ model Batch {
   impactMetrics    ImpactMetric[]
   evaluationsL1    EvaluationL1[]
   auditLogs        AuditLog[]
+  importJobs       ParticipantImportJob[]
   @@unique([tenantId, code])
   @@index([tenantId, status, startDate])
 }
@@ -615,4 +640,64 @@ model AuditLog {
   @@index([tenantId, createdAt])
   @@index([batchId, createdAt])
   @@index([actorUserId, createdAt])
+}
+
+
+model AuthSession {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @db.Uuid
+  tokenHash   String   @unique
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  lastSeenAt  DateTime @default(now())
+  userAgent   String?
+  ipHash      String?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, expiresAt])
+}
+
+model MagicLinkToken {
+  id          String           @id @default(uuid()) @db.Uuid
+  userId      String           @db.Uuid
+  purpose     MagicLinkPurpose
+  tokenHash   String           @unique
+  expiresAt   DateTime
+  consumedAt  DateTime?
+  createdAt   DateTime         @default(now())
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, purpose, expiresAt])
+}
+
+model ConsentRecord {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @db.Uuid
+  tenantId    String?  @db.Uuid
+  version     String
+  acceptedAt  DateTime @default(now())
+  ipHash      String?
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant      Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  @@index([userId, acceptedAt])
+  @@index([tenantId, acceptedAt])
+}
+
+model ParticipantImportJob {
+  id            String          @id @default(uuid()) @db.Uuid
+  tenantId      String          @db.Uuid
+  batchId       String          @db.Uuid
+  createdById   String          @db.Uuid
+  fileName      String
+  status        ImportJobStatus @default(PENDING)
+  totalRows     Int             @default(0)
+  successRows   Int             @default(0)
+  failedRows    Int             @default(0)
+  warnings      Json?           @db.JsonB
+  errors        Json?           @db.JsonB
+  createdAt     DateTime        @default(now())
+  completedAt   DateTime?
+  tenant        Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  batch         Batch           @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  createdBy     User            @relation("ImportCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  @@index([tenantId, batchId, createdAt])
 }

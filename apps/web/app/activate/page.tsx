@@ -1,0 +1,3 @@
+import { Suspense } from 'react';
+import ActivateForm from './ActivateForm';
+export default function Page(){return <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4"><section className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-lg"><div className="text-xs font-bold uppercase tracking-[.2em] text-teal">Leadership That Works</div><h1 className="mt-2 text-3xl font-semibold">Aktivasi akun</h1><p className="mt-2 mb-6 text-sm leading-6 text-slate-600">Buat password untuk mengaktifkan akses program. Tautan aktivasi hanya dapat digunakan satu kali.</p><Suspense fallback={<p>Memuat…</p>}><ActivateForm/></Suspense></section></main>}
