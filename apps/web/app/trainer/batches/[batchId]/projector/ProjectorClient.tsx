@@ -8,6 +8,8 @@ type Feed={batch:{name:string;code:string;joinCode:string};participantCount:numb
 type GameFeed={round:any;card:any;aggregate:Record<string,number>|null;answer:any;choices:string[];totalVotes:number};
 type ArenaFeed={round:any;event:any;answer:any;leaderboard:any[]|null;eventResults:any[]|null};
 type WarFeed={round:any;events:any[];leaderboard:any[]|null};
+type AuctionFeed={round:any;roundInfo:string|null;leaderboard:any[]|null;readiness:any[]|null};
+type BoardFeed={round:any;case:any;timerSec:number};
 
 const LIVE_GAME_TYPES=new Set(['LEADERSHIP_MIRROR','PRIORITY_POKER','FACT_OR_FICTION']);
 
@@ -18,7 +20,7 @@ function mmss(seconds:number){
 }
 
 export default function ProjectorClient({batchId}:{batchId:string}){
- const[feed,setFeed]=useState<Feed|null>(null);const[game,setGame]=useState<GameFeed|null>(null);const[arena,setArena]=useState<ArenaFeed|null>(null);const[war,setWar]=useState<WarFeed|null>(null);const[now,setNow]=useState(Date.now());
+ const[feed,setFeed]=useState<Feed|null>(null);const[game,setGame]=useState<GameFeed|null>(null);const[arena,setArena]=useState<ArenaFeed|null>(null);const[war,setWar]=useState<WarFeed|null>(null);const[auction,setAuction]=useState<AuctionFeed|null>(null);const[board,setBoard]=useState<BoardFeed|null>(null);const[now,setNow]=useState(Date.now());
  async function load(){
    const r=await fetch('/api/trainer/batches/'+batchId+'/session-control',{cache:'no-store'});
    const d=await r.json();
@@ -30,19 +32,27 @@ export default function ProjectorClient({batchId}:{batchId:string}){
        const gd=await gr.json();
        setGame(gr.ok?gd:null);
        setArena(null);
-       setWar(null);
+       setWar(null);setAuction(null);setBoard(null);
      }else if(active?.type==='ARENA'){
        const ar=await fetch('/api/games/'+active.id+'/arena',{cache:'no-store'});
        const ad=await ar.json();
        setArena(ar.ok?ad:null);
        setGame(null);
-       setWar(null);
+       setWar(null);setAuction(null);setBoard(null);
      }else if(active?.type==='WAR_ROOM'){
        const wr=await fetch('/api/games/'+active.id+'/war-room',{cache:'no-store'});
        const wd=await wr.json();
        setWar(wr.ok?wd:null);
-       setGame(null);setArena(null);
-     }else { setGame(null); setArena(null); setWar(null); }
+       setGame(null);setArena(null);setAuction(null);setBoard(null);
+     }else if(active?.type==='DECISION_AUCTION'){
+       const qr=await fetch('/api/games/'+active.id+'/decision-auction',{cache:'no-store'});
+       const qd=await qr.json();
+       setAuction(qr.ok?qd:null);setGame(null);setArena(null);setWar(null);setBoard(null);
+     }else if(active?.type==='BOARDROOM'){
+       const br=await fetch('/api/games/'+active.id+'/boardroom',{cache:'no-store'});
+       const bd=await br.json();
+       setBoard(br.ok?bd:null);setGame(null);setArena(null);setWar(null);setAuction(null);
+     }else { setGame(null); setArena(null); setWar(null); setAuction(null); setBoard(null); }
    }
  }
  useEffect(()=>{void load();const p=setInterval(()=>void load(),1500);const t=setInterval(()=>setNow(Date.now()),1000);return()=>{clearInterval(p);clearInterval(t)}},[batchId]);
@@ -72,6 +82,11 @@ export default function ProjectorClient({batchId}:{batchId:string}){
        {war?.round&&<div className="mt-5 text-xl text-slate-400">War Room · {war.round.phase} · {war.round.sentEventNos?.length||0}/7 event</div>}
        {war&&war.events.length>0&&<div className="mt-8 rounded-3xl bg-amber-400/10 p-8 ring-1 ring-amber-400/20"><div className="text-sm font-bold uppercase tracking-wider text-amber-300">War Room Event</div><div className="mt-3 text-3xl font-semibold text-amber-100">{war.events[war.events.length-1].event}</div></div>}
        {war?.leaderboard&&<div className="mt-8 grid gap-3 md:grid-cols-2">{war.leaderboard.map((x:any)=><div key={x.team.id} className="rounded-2xl bg-white/5 p-5 ring-1 ring-white/10"><div className="flex items-center justify-between text-2xl"><span>#{x.rank} {x.team.name}</span><b>{Math.round(x.total)}/100</b></div><div className="mt-2 text-sm text-slate-400">{x.scoredDimensions}/8 dimensi{x.weakestDimension?' · Weakest '+x.weakestDimension:''}</div></div>)}</div>}
+       {auction?.round&&<div className="mt-5 text-xl text-slate-400">Decision Auction Round {auction.round.round} · {auction.round.phase}</div>}
+       {auction?.roundInfo&&<div className="mt-8 rounded-3xl bg-amber-400/10 p-8 text-3xl font-semibold text-amber-100 ring-1 ring-amber-400/20">{auction.roundInfo}</div>}
+       {auction?.readiness&&<div className="mt-8 grid gap-3 md:grid-cols-2">{auction.readiness.map((x:any)=><div key={x.team.id} className="rounded-2xl bg-white/5 p-5 ring-1 ring-white/10"><div className="flex items-center justify-between text-xl"><span>{x.team.name}</span><b className={x.submitted?'text-emerald-300':'text-slate-500'}>{x.submitted?'Submitted':'Waiting'}</b></div></div>)}</div>}
+       {auction?.leaderboard&&<div className="mt-8 grid gap-3 md:grid-cols-2">{auction.leaderboard.filter((x:any)=>x.complete).map((x:any)=><div key={x.team.id} className="rounded-2xl bg-white/5 p-5 ring-1 ring-white/10"><div className="flex items-center justify-between text-2xl"><span>#{x.rank} {x.team.name}</span><b>NET {Math.round(x.score?.net||0)}</b></div><div className="mt-2 text-sm text-slate-400">Switch {Math.round(x.score?.switchingCost||0)} · Risk {x.score?.riskExposure||0}</div></div>)}</div>}
+       {board?.round&&board.case&&<div className="mt-8 rounded-3xl bg-white/5 p-8 ring-1 ring-white/10"><div className="flex items-center justify-between gap-6"><div><div className="text-sm font-bold uppercase tracking-wider text-amber-300">60-Second Boardroom · {board.case.label}</div><div className="mt-4 max-w-4xl text-3xl font-semibold leading-relaxed">{board.case.brief}</div></div><div className={`font-mono text-7xl font-bold ${board.round.remainingSec<=10?'text-red-300':'text-amber-300'}`}>{mmss(board.round.remainingSec)}</div></div></div>}
      </div>}
    </div>
  </main>
