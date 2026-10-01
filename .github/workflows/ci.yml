@@ -58,7 +58,7 @@ jobs:
         run: npm run typecheck
 
       - name: Unit tests
-        run: npm run test:sprint1
+        run: npm run test:sprint2
 
       - name: Production build
         run: npm run build
