@@ -311,7 +311,8 @@
           "type": "BIAS_TRAP",
           "title": "G9 Bias Trap",
           "config": {
-            "game": "G9"
+            "game": "G9",
+            "gameContentCode": "BIAS_TRAP_V1"
           },
           "initialStatus": "DRAFT"
         }
