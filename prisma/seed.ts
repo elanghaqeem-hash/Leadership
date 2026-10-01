@@ -91,6 +91,9 @@ function structuredGameContent() {
     additionalData: String(r[3] ?? ''),
   }));
 
+  const rootCauseRows = rowsAfterSectionHeading('Game 8 · Root Cause Race', 'Data');
+  const rootCauseData = rootCauseRows.map((r,idx)=>({no:idx+1,dimension:String(r[0]??''),evidence:String(r[1]??'')}));
+
   const detectiveRows = rowsAfterGameHeading('Game 7 · Detective Room');
   const detectiveEvidence = detectiveRows.filter((r)=>Number.isFinite(Number(r[0]))).map((r)=>({
     no:Number(r[0]), topic:String(r[1]??''), evidence:String(r[2]??''), category:String(r[3]??''),
@@ -115,7 +118,7 @@ function structuredGameContent() {
     observerFocus:String(r[2] ?? ''),
   }));
 
-  return { mirrorCards, pokerCards, calendarBase, calendarDisruptions, delegationRelay, factCards, detectiveEvidence, detectiveDiagnosisKey, biasTrapCards, biasTrapChoices, boardCases, warInitial, warEvents };
+  return { mirrorCards, pokerCards, calendarBase, calendarDisruptions, delegationRelay, factCards, rootCauseData, detectiveEvidence, detectiveDiagnosisKey, biasTrapCards, biasTrapChoices, boardCases, warInitial, warEvents };
 }
 
 async function main() {
@@ -224,6 +227,16 @@ async function main() {
     title:'Fact or Fiction',
     payload:{cards:gameContent.factCards.map(({answer,additionalData,...card})=>card)},
     answerKey:{cards:gameContent.factCards.map(({no,answer,additionalData})=>({no,answer,additionalData}))},
+  }));
+  content.push(await upsertGlobalContent({
+    code:'ROOT_CAUSE_RACE_V1',
+    type:'TEAM_SIMULATION',
+    title:'Root Cause Race',
+    payload:{
+      caseTitle:'Complaint naik 40%',
+      evidence:gameContent.rootCauseData,
+      framework:{fiveWhys:5,fishboneCategories:['People','Process','Policy','System','Data','Environment'],issueTree:'MECE'},
+    },
   }));
   content.push(await upsertGlobalContent({
     code:'DETECTIVE_ROOM_V1',
