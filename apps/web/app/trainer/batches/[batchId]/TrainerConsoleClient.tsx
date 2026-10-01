@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
+import { useBatchRealtime } from '@/hooks/useBatchRealtime';
 import Link from 'next/link';
 import LiveGameTrainerPanel from './LiveGameTrainerPanel';
 import ArenaTrainerPanel from './ArenaTrainerPanel';
@@ -27,7 +28,8 @@ function pill(status:string){
 export default function TrainerConsoleClient({batchId}:{batchId:string}){
  const[feed,setFeed]=useState<Feed|null>(null);const[error,setError]=useState('');const[busy,setBusy]=useState('');
  async function load(){const r=await fetch(`/api/trainer/batches/${batchId}/session-control`,{cache:'no-store'});const d=await r.json();if(r.ok)setFeed(d);else setError(d.error||'Gagal memuat Trainer Console')}
- useEffect(()=>{load();const t=setInterval(load,2500);return()=>clearInterval(t)},[batchId]);
+ useEffect(()=>{void load()},[batchId]);
+ useBatchRealtime(batchId,load,5000);
  async function control(activityId:string,action:'OPEN'|'LOCK'|'REVEAL'|'CLOSE'){setBusy(activityId+action);setError('');const r=await fetch(`/api/trainer/batches/${batchId}/session-control`,{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({activityId,action})});const d=await r.json();setBusy('');if(!r.ok){setError(d.error||'Gagal mengubah status');return;}await load()}
  const active=useMemo(()=>feed?.sessions.flatMap(s=>s.activities).find(a=>a.status==='OPEN')??null,[feed]);
  if(!feed)return <main className="min-h-screen bg-slate-950 p-5 text-white">{error||'Memuat Trainer Console…'}</main>;
