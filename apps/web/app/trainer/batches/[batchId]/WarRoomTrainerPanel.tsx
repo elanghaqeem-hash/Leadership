@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useActivityRealtime } from '@/hooks/useActivityRealtime';
 
 type Feed={
   round:null|{roundNo:number;phase:'RUNNING'|'CLOSED';sentEventNos:number[]};
@@ -13,7 +14,8 @@ type Feed={
 export default function WarRoomTrainerPanel({activityId}:{activityId:string}){
  const[feed,setFeed]=useState<Feed|null>(null);const[error,setError]=useState('');const[busy,setBusy]=useState('');
  async function load(){const r=await fetch('/api/games/'+activityId+'/war-room',{cache:'no-store'});const d=await r.json();if(r.ok){setFeed(d);setError('')}else setError(d.error||'Gagal memuat War Room')}
- useEffect(()=>{void load();const t=setInterval(()=>void load(),1500);return()=>clearInterval(t)},[activityId]);
+ useEffect(()=>{void load()},[activityId]);
+ useActivityRealtime(activityId,load,5000);
  async function control(command:'START'|'SEND_EVENT'|'CLOSE'){setBusy(command);const r=await fetch('/api/games/'+activityId+'/war-room',{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({command})});const d=await r.json();setBusy('');if(!r.ok){setError(d.error||'Kontrol War Room gagal');return;}await load()}
  const lastEvent=feed?.events?.[feed.events.length-1];
  return <div className="mt-3 rounded-xl bg-black/20 p-3 ring-1 ring-white/10">
