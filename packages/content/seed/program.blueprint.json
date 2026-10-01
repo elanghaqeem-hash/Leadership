@@ -290,7 +290,8 @@
           "type": "ROOT_CAUSE_RACE",
           "title": "G8 Root Cause Race",
           "config": {
-            "game": "G8"
+            "game": "G8",
+            "contentCode": "ROOT_CAUSE_RACE_V1"
           },
           "initialStatus": "DRAFT"
         }
