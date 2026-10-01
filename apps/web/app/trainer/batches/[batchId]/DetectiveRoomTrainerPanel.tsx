@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useActivityRealtime } from '@/hooks/useActivityRealtime';
 
 type TeamRow={team:{id:string;name:string;number:number};state:{purchased:number[];diagnosis:string;diagnosisCorrect?:boolean};remainingTokens:number;score:any;rank:number|null};
 type Feed={
@@ -12,7 +13,8 @@ type Feed={
 export default function DetectiveRoomTrainerPanel({activityId}:{activityId:string}){
  const[feed,setFeed]=useState<Feed|null>(null);const[error,setError]=useState('');const[busy,setBusy]=useState('');const[tokenBudget,setTokenBudget]=useState('');const[evidenceCost,setEvidenceCost]=useState('');
  async function load(){const r=await fetch('/api/games/'+activityId+'/detective-room',{cache:'no-store'});const d=await r.json();if(r.ok){setFeed(d);setError('')}else setError(d.error||'Gagal memuat Detective Room')}
- useEffect(()=>{void load();const t=setInterval(()=>void load(),1500);return()=>clearInterval(t)},[activityId]);
+ useEffect(()=>{void load()},[activityId]);
+ useActivityRealtime(activityId,load,5000);
  async function control(body:any,key:string){setBusy(key);const r=await fetch('/api/games/'+activityId+'/detective-room',{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify(body)});const d=await r.json();setBusy('');if(!r.ok){setError(d.error||'Kontrol Detective Room gagal');return;}await load()}
  const startDisabled=busy!==''||Boolean(feed?.round&&feed.round.phase==='RUNNING')||Number(tokenBudget)<1||Number(evidenceCost)<1;
  return <div className="mt-3 rounded-xl bg-black/20 p-3 ring-1 ring-white/10">
