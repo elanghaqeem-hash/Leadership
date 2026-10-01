@@ -1,6 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { useBatchRealtime } from '@/hooks/useBatchRealtime';
 
 type Spec={code:string;name:string;min:number;max:number};
 type Activity={
@@ -44,6 +45,7 @@ export default function ObserverRubricClient({batchId}:{batchId:string}){
  const[feed,setFeed]=useState<Feed|null>(null);const[teamId,setTeamId]=useState('');const[error,setError]=useState('');const[loading,setLoading]=useState(true);
  async function load(){const r=await fetch('/api/observer/batches/'+batchId+'/rubrics',{cache:'no-store'});const d=await r.json();if(!r.ok){setError(d.error||'Gagal memuat rubric');setLoading(false);return;}setFeed(d);setTeamId(v=>v||d.teams?.[0]?.id||'');setLoading(false)}
  useEffect(()=>{void load()},[batchId]);
+ useBatchRealtime(batchId,load,5000);
  const team=useMemo(()=>feed?.teams.find(t=>t.id===teamId)||null,[feed,teamId]);
  if(loading)return <main className="min-h-screen bg-slate-50 p-4"><div className="mx-auto max-w-3xl animate-pulse space-y-4"><div className="h-28 rounded-3xl bg-slate-200"/><div className="h-56 rounded-2xl bg-slate-200"/></div></main>;
  if(!feed)return <main className="p-6 text-red-700">{error||'Data tidak tersedia'}</main>;
