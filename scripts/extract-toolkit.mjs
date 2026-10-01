@@ -38,32 +38,60 @@ const gameRows = rows('24 Kartu Game', 1, 120, 1, 5);
 
 const seed = {
   meta: { source: path.basename(source), sha256, generatedAt: new Date().toISOString() },
-  selfDiagnostic: { dimensions: rows('1 Self-Diagnostic', 6, 15, 1, 1).flat().filter(Boolean), scale: { min: 1, max: 5 } },
-  priorityScorecard: {
-    weights: { urgency: priorityWeights[0], business: priorityWeights[1], customer: priorityWeights[2], risk: priorityWeights[3], compliance: priorityWeights[4], strategic: priorityWeights[5] },
-    thresholds: { p1: 4, p2: 3, p3: 2 }, override: { risk: 5, compliance: 5 }
+  selfDiagnostic: {
+    dimensions: rows('1 Self-Diagnostic', 6, 15, 1, 1).flat().filter(Boolean),
+    scale: { min: 1, max: 5 },
   },
-  weeklyPlanner: { categories: rows('4 Weekly Planner', 6, 12, 8, 8).flat().filter(Boolean), slotMinutes: 30, buffer: { min: 0.15, max: 0.20 }, focusEnough: 0.20 },
+  priorityScorecard: {
+    weights: {
+      urgency: priorityWeights[0], business: priorityWeights[1], customer: priorityWeights[2],
+      risk: priorityWeights[3], compliance: priorityWeights[4], strategic: priorityWeights[5],
+    },
+    thresholds: { p1: 4, p2: 3, p3: 2 },
+    override: { risk: 5, compliance: 5 },
+  },
+  weeklyPlanner: {
+    categories: rows('4 Weekly Planner', 6, 12, 8, 8).flat().filter(Boolean),
+    slotMinutes: 30,
+    buffer: { min: 0.15, max: 0.20 },
+    focusEnough: 0.20,
+  },
   arena: {
     decisionMinutes: { Delegate: cell('15 Arena Scoring', 'B5'), Escalate: cell('15 Arena Scoring', 'C5'), Defer: cell('15 Arena Scoring', 'D5') },
-    events: arenaRows.map((r, i) => ({ no: i + 1, event: r[0], dimension: r[1], best: r[2], acceptable: r[3], doMinutes: r[4] }))
+    events: arenaRows.map((r, i) => ({ no: i + 1, event: r[0], dimension: r[1], best: r[2], acceptable: r[3], doMinutes: r[4] })),
   },
   decisionAuction: {
-    budget: cell('16 Decision Auction', 'B4'), switchingRate: cell('16 Decision Auction', 'D4'), maxActive: 3,
-    programs: auctionRows.map((r) => ({ name: r[0], cost: r[1], benefit: r[2], risk: r[3], uncertainty: r[4], factors: { r1: r[5], r2: r[6], r3: r[7] } }))
+    budget: cell('16 Decision Auction', 'B4'),
+    switchingRate: cell('16 Decision Auction', 'D4'),
+    maxActive: 3,
+    programs: auctionRows.map((r) => ({ name: r[0], cost: r[1], benefit: r[2], risk: r[3], uncertainty: r[4], factors: { r1: r[5], r2: r[6], r3: r[7] } })),
   },
-  warRoom: { dimensions: warRows.map((r) => ({ name: r[0], max: r[1], rubric: { low: r[2], medium: r[3], high: r[4] } })), totalMax: 100 },
-  boardroom: { criteria: rowValues('18 Boardroom Rubric', 5, 2, 7), scale: { min: 1, max: 5 }, max: 30 },
-  test: { pointsPerQuestion: 5, questions: testRows.map((r) => ({ no: r[0], question: r[1], options: { A: r[2], B: r[3], C: r[4], D: r[5] }, answer: r[6] })) },
-  managerFollowUp: { questions: rows('21 Manager Follow-up', 6, 10, 1, 1).flat().filter(Boolean), thresholds: { onTrack: 0.80, needsPush: 0.50 } },
+  warRoom: {
+    dimensions: warRows.map((r) => ({ name: r[0], max: r[1], rubric: { low: r[2], medium: r[3], high: r[4] } })),
+    totalMax: 100,
+  },
+  boardroom: {
+    criteria: rowValues('18 Boardroom Rubric', 5, 2, 7),
+    scale: { min: 1, max: 5 }, max: 30,
+  },
+  test: {
+    pointsPerQuestion: 5,
+    questions: testRows.map((r) => ({ no: r[0], question: r[1], options: { A: r[2], B: r[3], C: r[4], D: r[5] }, answer: r[6] })),
+  },
+  managerFollowUp: {
+    questions: rows('21 Manager Follow-up', 6, 10, 1, 1).flat().filter(Boolean),
+    thresholds: { onTrack: 0.80, needsPush: 0.50 },
+  },
   impactMetrics: { metrics: impactRows.map((r) => ({ name: r[0], unit: r[1], goodDirection: r[2] })) },
   evaluationL1: { statements: rows('25 Evaluasi Training', 16, 23, 2, 2).flat().filter(Boolean) },
-  gameCardsRaw: { sheet: '24 Kartu Game', rows: gameRows }
+  gameCardsRaw: { sheet: '24 Kartu Game', rows: gameRows },
 };
 
 const manifest = {
-  sourceFile: path.relative(root, source).replaceAll('\\', '/'), sha256, sheetCount: workbook.worksheets.length,
-  sheets: workbook.worksheets.map((ws, index) => ({ index, name: ws.name, rowCount: ws.rowCount, columnCount: ws.columnCount }))
+  sourceFile: path.relative(root, source).replaceAll('\\', '/'),
+  sha256,
+  sheetCount: workbook.worksheets.length,
+  sheets: workbook.worksheets.map((ws, index) => ({ index, name: ws.name, rowCount: ws.rowCount, columnCount: ws.columnCount })),
 };
 
 await fs.mkdir(path.dirname(seedPath), { recursive: true });

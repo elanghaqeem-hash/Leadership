@@ -1,0 +1,1598 @@
+{
+  "meta": {
+    "source": "Leadership_That_Works_Toolkit.xlsx",
+    "sha256": "0a2565947ade43562f13e74300ef022873aea6ca05e3ed74efd85ca60ebe5205",
+    "note": "Generated from the canonical Excel toolkit; regenerate after workbook changes."
+  },
+  "selfDiagnostic": {
+    "dimensions": [
+      "Priority Management",
+      "Time Management",
+      "Focus",
+      "Delegation",
+      "Critical Thinking",
+      "Decision Making",
+      "Communication",
+      "Accountability",
+      "Coaching",
+      "Execution"
+    ],
+    "scale": {
+      "min": 1,
+      "max": 5
+    }
+  },
+  "priorityScorecard": {
+    "weights": {
+      "urgency": 0.2,
+      "business": 0.15,
+      "customer": 0.2,
+      "risk": 0.2,
+      "compliance": 0.15,
+      "strategic": 0.1
+    },
+    "thresholds": {
+      "p1": 4.0,
+      "p2": 3.0,
+      "p3": 2.0
+    },
+    "override": {
+      "risk": 5,
+      "compliance": 5
+    },
+    "actions": {
+      "P1": "DO / eskalasi hari ini",
+      "P2": "PLAN: time block minggu ini",
+      "P3": "DELEGATE dengan contract",
+      "P4": "ELIMINATE / batch"
+    }
+  },
+  "weeklyPlanner": {
+    "categories": [
+      "Focus",
+      "Meeting",
+      "Customer",
+      "People/Coaching",
+      "Admin/Batch",
+      "Buffer",
+      "Break"
+    ],
+    "slotMinutes": 30,
+    "buffer": {
+      "min": 0.15,
+      "max": 0.2
+    },
+    "focusEnough": 0.2
+  },
+  "arena": {
+    "decisionMinutes": {
+      "Delegate": 15,
+      "Escalate": 10,
+      "Defer": 0
+    },
+    "events": [
+      {
+        "no": 1,
+        "event": "Nasabah prioritas komplain di hall",
+        "dimension": "Customer",
+        "best": "Do",
+        "acceptable": "Delegate",
+        "doMinutes": 30
+      },
+      {
+        "no": 2,
+        "event": "Fraud alert transaksi tidak wajar",
+        "dimension": "Risk",
+        "best": "Escalate",
+        "acceptable": "Do",
+        "doMinutes": 45
+      },
+      {
+        "no": 3,
+        "event": "Review target funding mingguan",
+        "dimension": "Business",
+        "best": "Do",
+        "acceptable": "Delegate",
+        "doMinutes": 45
+      },
+      {
+        "no": 4,
+        "event": "Officer baru minta arahan",
+        "dimension": "People",
+        "best": "Delegate",
+        "acceptable": "Do",
+        "doMinutes": 30
+      },
+      {
+        "no": 5,
+        "event": "Laporan regulator jatuh tempo hari ini",
+        "dimension": "Risk",
+        "best": "Do",
+        "acceptable": "Delegate",
+        "doMinutes": 60
+      },
+      {
+        "no": 6,
+        "event": "Kantor wilayah minta data 1 jam",
+        "dimension": "Execution",
+        "best": "Delegate",
+        "acceptable": "Do",
+        "doMinutes": 40
+      },
+      {
+        "no": 7,
+        "event": "Teller selisih kas",
+        "dimension": "Risk",
+        "best": "Do",
+        "acceptable": "Escalate",
+        "doMinutes": 30
+      },
+      {
+        "no": 8,
+        "event": "Prospek kredit besar minta bertemu",
+        "dimension": "Business",
+        "best": "Do",
+        "acceptable": "Delegate",
+        "doMinutes": 60
+      },
+      {
+        "no": 9,
+        "event": "ATM offline",
+        "dimension": "Customer",
+        "best": "Escalate",
+        "acceptable": "Delegate",
+        "doMinutes": 20
+      },
+      {
+        "no": 10,
+        "event": "Dua staf konflik",
+        "dimension": "People",
+        "best": "Do",
+        "acceptable": "Delegate",
+        "doMinutes": 30
+      },
+      {
+        "no": 11,
+        "event": "Temuan audit lewat tenggat",
+        "dimension": "Risk",
+        "best": "Do",
+        "acceptable": "Delegate",
+        "doMinutes": 45
+      },
+      {
+        "no": 12,
+        "event": "Vendor menagih dokumen kontrak",
+        "dimension": "Execution",
+        "best": "Delegate",
+        "acceptable": "Defer",
+        "doMinutes": 20
+      },
+      {
+        "no": 13,
+        "event": "Undangan meeting tanpa agenda",
+        "dimension": "Execution",
+        "best": "Defer",
+        "acceptable": "Delegate",
+        "doMinutes": 60
+      },
+      {
+        "no": 14,
+        "event": "Nasabah minta restrukturisasi",
+        "dimension": "Business",
+        "best": "Delegate",
+        "acceptable": "Do",
+        "doMinutes": 45
+      },
+      {
+        "no": 15,
+        "event": "Grup chat ramai 80 pesan",
+        "dimension": "Execution",
+        "best": "Defer",
+        "acceptable": "Delegate",
+        "doMinutes": 30
+      },
+      {
+        "no": 16,
+        "event": "Staf terbaik ingin resign",
+        "dimension": "People",
+        "best": "Do",
+        "acceptable": "Escalate",
+        "doMinutes": 45
+      },
+      {
+        "no": 17,
+        "event": "Approval kredit menumpuk 6 berkas",
+        "dimension": "Business",
+        "best": "Do",
+        "acceptable": "Delegate",
+        "doMinutes": 60
+      },
+      {
+        "no": 18,
+        "event": "Media sosial menyebut cabang",
+        "dimension": "Customer",
+        "best": "Escalate",
+        "acceptable": "Do",
+        "doMinutes": 30
+      },
+      {
+        "no": 19,
+        "event": "Sistem lambat saat jam sibuk",
+        "dimension": "Customer",
+        "best": "Escalate",
+        "acceptable": "Delegate",
+        "doMinutes": 20
+      },
+      {
+        "no": 20,
+        "event": "Coaching terjadwal 30 menit",
+        "dimension": "People",
+        "best": "Do",
+        "acceptable": "Defer",
+        "doMinutes": 30
+      }
+    ],
+    "scoring": {
+      "bestPoints": 10,
+      "acceptablePoints": 5,
+      "deferRiskPenalty": -10,
+      "over480Penalty": -15,
+      "escalateDeferLimit": 8,
+      "escalateDeferPenalty": -10,
+      "balanceIndex": "MIN(categoryScores)/MAX(categoryScores), Excel IFERROR -> 0"
+    }
+  },
+  "decisionAuction": {
+    "budget": 1000,
+    "switchingRate": 0.1,
+    "maxActive": 3,
+    "programs": [
+      {
+        "id": "hire_staff",
+        "name": "Hire staff",
+        "cost": 300,
+        "benefit": 350,
+        "risk": 1,
+        "uncertainty": 1,
+        "factors": {
+          "r1": 1,
+          "r2": 1,
+          "r3": 1.4
+        }
+      },
+      {
+        "id": "automation",
+        "name": "Automation",
+        "cost": 450,
+        "benefit": 650,
+        "risk": 2,
+        "uncertainty": 3,
+        "factors": {
+          "r1": 0.4,
+          "r2": 1,
+          "r3": 1
+        }
+      },
+      {
+        "id": "training",
+        "name": "Training",
+        "cost": 150,
+        "benefit": 220,
+        "risk": 1,
+        "uncertainty": 2,
+        "factors": {
+          "r1": 1,
+          "r2": 1,
+          "r3": 1.3
+        }
+      },
+      {
+        "id": "process_redesign",
+        "name": "Process redesign",
+        "cost": 250,
+        "benefit": 420,
+        "risk": 2,
+        "uncertainty": 2,
+        "factors": {
+          "r1": 1,
+          "r2": 1.1,
+          "r3": 1
+        }
+      },
+      {
+        "id": "marketing_campaign",
+        "name": "Marketing campaign",
+        "cost": 300,
+        "benefit": 380,
+        "risk": 2,
+        "uncertainty": 3,
+        "factors": {
+          "r1": 1,
+          "r2": 0.8,
+          "r3": 1
+        }
+      },
+      {
+        "id": "collection_improvement",
+        "name": "Collection improvement",
+        "cost": 200,
+        "benefit": 380,
+        "risk": 1,
+        "uncertainty": 2,
+        "factors": {
+          "r1": 1,
+          "r2": 1.5,
+          "r3": 1
+        }
+      },
+      {
+        "id": "system_upgrade",
+        "name": "System upgrade",
+        "cost": 500,
+        "benefit": 700,
+        "risk": 3,
+        "uncertainty": 3,
+        "factors": {
+          "r1": 0.7,
+          "r2": 1,
+          "r3": 1
+        }
+      }
+    ],
+    "roundInfo": {
+      "R1": "Vendor otomasi terlambat 6 bulan; upgrade sistem tertunda.",
+      "R2": "NPL naik di segmen mikro.",
+      "R3": "Dua staf senior resign."
+    }
+  },
+  "warRoom": {
+    "dimensions": [
+      {
+        "name": "Self Leadership",
+        "max": 10,
+        "rubric": {
+          "low": "Panik, saling menyalahkan",
+          "medium": "Tenang, sebagian ownership",
+          "high": "Tenang, ownership jelas, accountable"
+        }
+      },
+      {
+        "name": "Priority",
+        "max": 15,
+        "rubric": {
+          "low": "Semua dikerjakan bersamaan",
+          "medium": "Prioritas ada, tidak diperbarui",
+          "high": "P1–P4 jelas & diperbarui tiap event"
+        }
+      },
+      {
+        "name": "Time Management",
+        "max": 10,
+        "rubric": {
+          "low": "Melewati timebox",
+          "medium": "Timebox sebagian",
+          "high": "Timebox disiplin, ada buffer"
+        }
+      },
+      {
+        "name": "Critical Thinking",
+        "max": 20,
+        "rubric": {
+          "low": "Menyimpulkan tanpa data",
+          "medium": "Sebagian berbasis evidence",
+          "high": "Fakta vs asumsi dipisah, root cause dicari"
+        }
+      },
+      {
+        "name": "Decision Quality",
+        "max": 15,
+        "rubric": {
+          "low": "Satu opsi, tanpa trade-off",
+          "medium": "Opsi ada, trade-off lemah",
+          "high": "≥3 opsi, trade-off & reversibility dinilai"
+        }
+      },
+      {
+        "name": "Risk Awareness",
+        "max": 10,
+        "rubric": {
+          "low": "Fraud/compliance ditunda",
+          "medium": "Risiko dicatat, tidak dieskalasi",
+          "high": "Eskalasi tepat waktu ke fungsi terkait"
+        }
+      },
+      {
+        "name": "Delegation",
+        "max": 10,
+        "rubric": {
+          "low": "Semua dikerjakan pimpinan",
+          "medium": "Delegasi tanpa outcome jelas",
+          "high": "Delegation contract & RACI jelas"
+        }
+      },
+      {
+        "name": "Execution",
+        "max": 10,
+        "rubric": {
+          "low": "Tanpa action tracker",
+          "medium": "Tracker tanpa owner/evidence",
+          "high": "Owner, deadline, evidence, checkpoint lengkap"
+        }
+      }
+    ],
+    "totalMax": 100
+  },
+  "boardroom": {
+    "criteria": [
+      "Clarity",
+      "Logic",
+      "Evidence",
+      "Risk Awareness",
+      "Recommendation",
+      "Action"
+    ],
+    "scale": {
+      "min": 1,
+      "max": 5
+    },
+    "max": 30,
+    "categories": [
+      {
+        "minPercent": 0.8,
+        "label": "Boardroom-ready"
+      },
+      {
+        "minPercent": 0.6,
+        "label": "Berkembang"
+      },
+      {
+        "minPercent": 0.0,
+        "label": "Perlu latihan"
+      }
+    ]
+  },
+  "test": {
+    "pointsPerQuestion": 5,
+    "questions": [
+      {
+        "no": 1,
+        "question": "Pekerjaan penting tetapi tidak mendesak (mis. coaching tim) masuk kuadran Eisenhower…",
+        "options": {
+          "A": "DO",
+          "B": "PLAN",
+          "C": "DELEGATE",
+          "D": "ELIMINATE"
+        },
+        "answer": "B"
+      },
+      {
+        "no": 2,
+        "question": "Dalam Banking Priority Scorecard, pekerjaan dengan Risk/Compliance Impact = 5 otomatis menjadi…",
+        "options": {
+          "A": "P4",
+          "B": "P3",
+          "C": "P2",
+          "D": "P1"
+        },
+        "answer": "D"
+      },
+      {
+        "no": 3,
+        "question": "Porsi buffer yang dianjurkan dari total jam kerja mingguan adalah…",
+        "options": {
+          "A": "0–5%",
+          "B": "15–20%",
+          "C": "30–40%",
+          "D": "50%"
+        },
+        "answer": "B"
+      },
+      {
+        "no": 4,
+        "question": "\"Nasabah ini aman karena sudah 15 tahun menjadi nasabah\" adalah contoh…",
+        "options": {
+          "A": "Assumption",
+          "B": "Fact",
+          "C": "Evidence",
+          "D": "Conclusion"
+        },
+        "answer": "A"
+      },
+      {
+        "no": 5,
+        "question": "Elemen Delegation Contract yang memastikan pekerjaan bisa dinyatakan selesai adalah…",
+        "options": {
+          "A": "Why",
+          "B": "Boundary",
+          "C": "Evidence",
+          "D": "Authority"
+        },
+        "answer": "C"
+      },
+      {
+        "no": 6,
+        "question": "Level delegasi ketika staf boleh memutuskan lalu menginformasikan ke atasan adalah…",
+        "options": {
+          "A": "L2 Analyze",
+          "B": "L3 Recommend",
+          "C": "L5 Own",
+          "D": "L4 Decide & inform"
+        },
+        "answer": "D"
+      },
+      {
+        "no": 7,
+        "question": "Pada GROW, tahap \"Apa yang sudah terjadi sejauh ini?\" termasuk…",
+        "options": {
+          "A": "Reality",
+          "B": "Goal",
+          "C": "Options",
+          "D": "Way Forward"
+        },
+        "answer": "A"
+      },
+      {
+        "no": 8,
+        "question": "Contoh feedback SBI yang tepat adalah…",
+        "options": {
+          "A": "\"Kamu kurang teliti.\"",
+          "B": "\"Pada laporan kemarin, dua angka belum direkonsiliasi sehingga review diulang.\"",
+          "C": "\"Tolong lebih baik lagi ya.\"",
+          "D": "\"Kinerja kamu mengecewakan.\""
+        },
+        "answer": "B"
+      },
+      {
+        "no": 9,
+        "question": "Tujuan utama teknik 5 Whys adalah…",
+        "options": {
+          "A": "Mencari pihak yang salah",
+          "B": "Mempercepat rapat",
+          "C": "Menembus symptom menuju root cause",
+          "D": "Membuat daftar solusi"
+        },
+        "answer": "C"
+      },
+      {
+        "no": 10,
+        "question": "Yang BUKAN kategori fishbone dalam training ini adalah…",
+        "options": {
+          "A": "People",
+          "B": "Process",
+          "C": "Data",
+          "D": "Luck"
+        },
+        "answer": "D"
+      },
+      {
+        "no": 11,
+        "question": "Memilih opsi karena \"Direktur menyukai opsi A\" tanpa menguji data adalah…",
+        "options": {
+          "A": "Authority bias",
+          "B": "Anchoring",
+          "C": "Recency bias",
+          "D": "Sunk cost"
+        },
+        "answer": "A"
+      },
+      {
+        "no": 12,
+        "question": "Terus mendanai proyek gagal karena \"sudah terlanjur keluar biaya besar\" adalah…",
+        "options": {
+          "A": "Halo effect",
+          "B": "Groupthink",
+          "C": "Sunk cost",
+          "D": "Availability bias"
+        },
+        "answer": "C"
+      },
+      {
+        "no": 13,
+        "question": "Prinsip MECE berarti pemecahan masalah harus…",
+        "options": {
+          "A": "Singkat dan menarik",
+          "B": "Saling lepas dan menyeluruh",
+          "C": "Berbasis opini senior",
+          "D": "Selalu 3 cabang"
+        },
+        "answer": "B"
+      },
+      {
+        "no": 14,
+        "question": "Pre-mortem paling tepat dilakukan…",
+        "options": {
+          "A": "Setelah proyek gagal",
+          "B": "Saat audit tahunan",
+          "C": "Sebelum keputusan dieksekusi",
+          "D": "Hanya untuk proyek IT"
+        },
+        "answer": "C"
+      },
+      {
+        "no": 15,
+        "question": "Slow thinking (analisis mendalam) paling diperlukan untuk keputusan yang…",
+        "options": {
+          "A": "Kecil dan mudah dibalik",
+          "B": "Rutin harian",
+          "C": "Sudah ada SOP-nya",
+          "D": "Besar dan sulit dibalik"
+        },
+        "answer": "D"
+      },
+      {
+        "no": 16,
+        "question": "Urutan PAUSE yang benar adalah…",
+        "options": {
+          "A": "Pause–Assess–Prioritize–Decide–Act–Monitor",
+          "B": "Act–Decide–Pause–Monitor",
+          "C": "Assess–Act–Pause–Decide",
+          "D": "Decide–Act–Assess–Pause"
+        },
+        "answer": "A"
+      },
+      {
+        "no": 17,
+        "question": "Struktur SFAIRA untuk presentasi 60 detik diawali dengan…",
+        "options": {
+          "A": "Recommendation, Action",
+          "B": "Situation, Fact",
+          "C": "Analysis, Implication",
+          "D": "Risk, Budget"
+        },
+        "answer": "B"
+      },
+      {
+        "no": 18,
+        "question": "Prinsip Action Tracker: \"No owner = …\"",
+        "options": {
+          "A": "No deadline",
+          "B": "No evidence",
+          "C": "No action",
+          "D": "No budget"
+        },
+        "answer": "C"
+      },
+      {
+        "no": 19,
+        "question": "Dalam satu baris RACI, jumlah Accountable (A) yang benar adalah…",
+        "options": {
+          "A": "Tidak dibatasi",
+          "B": "Minimal 2",
+          "C": "Sama dengan jumlah R",
+          "D": "Tepat 1"
+        },
+        "answer": "D"
+      },
+      {
+        "no": 20,
+        "question": "Cara terbaik membuktikan training berdampak adalah…",
+        "options": {
+          "A": "Skor kepuasan peserta",
+          "B": "Metrik perilaku before vs after",
+          "C": "Jumlah slide",
+          "D": "Durasi training"
+        },
+        "answer": "B"
+      }
+    ]
+  },
+  "managerFollowUp": {
+    "questions": [
+      "1. Apa perilaku yang berubah?",
+      "2. Apa hasilnya?",
+      "3. Apa contoh nyata?",
+      "4. Apa hambatan?",
+      "5. Apa behavioral target berikutnya?"
+    ],
+    "thresholds": {
+      "onTrack": 0.8,
+      "needsPush": 0.5
+    }
+  },
+  "impactMetrics": {
+    "metrics": [
+      {
+        "name": "Overdue task",
+        "unit": "jumlah",
+        "goodDirection": "Turun"
+      },
+      {
+        "name": "Decision turnaround time",
+        "unit": "hari",
+        "goodDirection": "Turun"
+      },
+      {
+        "name": "Unnecessary meeting hours",
+        "unit": "jam/minggu",
+        "goodDirection": "Turun"
+      },
+      {
+        "name": "Delegation frequency",
+        "unit": "tugas/minggu",
+        "goodDirection": "Naik"
+      },
+      {
+        "name": "Rework",
+        "unit": "kali/bulan",
+        "goodDirection": "Turun"
+      },
+      {
+        "name": "Escalation quality",
+        "unit": "skor 1–5",
+        "goodDirection": "Naik"
+      },
+      {
+        "name": "Team follow-up",
+        "unit": "kali/minggu",
+        "goodDirection": "Naik"
+      },
+      {
+        "name": "Action closure rate",
+        "unit": "%",
+        "goodDirection": "Naik"
+      },
+      {
+        "name": "Focus time",
+        "unit": "jam/minggu",
+        "goodDirection": "Naik"
+      }
+    ]
+  },
+  "evaluationL1": {
+    "statements": [
+      "Materi relevan dengan pekerjaan saya",
+      "Game dan simulasi membantu saya memahami konsep",
+      "Saya tahu apa yang akan saya lakukan berbeda besok",
+      "Framework mudah diterapkan di unit saya",
+      "Fasilitator mendorong saya berpikir, bukan sekadar mendengar",
+      "Porsi teori vs praktik seimbang",
+      "Toolkit siap dipakai",
+      "Saya akan merekomendasikan training ini"
+    ]
+  },
+  "gameCardsRaw": {
+    "sheet": "24 Kartu Game",
+    "rows": [
+      [
+        "Kartu Game Siap Cetak (Game 1–11 + War Room)",
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        "Cetak per blok, potong menjadi kartu. Kolom kunci hanya untuk trainer. Semua kasus fiktif untuk latihan.",
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        "Legenda: sel kuning = diisi peserta/trainer (teks biru); sel putih/abu = otomatis (rumus) atau panduan.",
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        "Game 1 · Leadership Mirror — kartu situasi (respon A–E dibacakan trainer)",
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        "No",
+        "Situasi",
+        "A Reactive / B Control",
+        "C Avoiding",
+        "D Accountable / E Empowering"
+      ],
+      [
+        "1",
+        "Deadline terlewat: laporan bulanan ke kantor pusat telat",
+        "A: bereaksi emosional, menegur di depan umum · B: ambil alih dan kerjakan sendiri",
+        "C: menunda, tunggu masalah hilang, tidak eskalasi",
+        "D: akui, cari akar, tetapkan tindakan · E: beri ruang tim menyelesaikan, pantau"
+      ],
+      [
+        "2",
+        "Staf salah input data nasabah",
+        "A: bereaksi emosional, menegur di depan umum · B: ambil alih dan kerjakan sendiri",
+        "C: menunda, tunggu masalah hilang, tidak eskalasi",
+        "D: akui, cari akar, tetapkan tindakan · E: beri ruang tim menyelesaikan, pantau"
+      ],
+      [
+        "3",
+        "Funding baru 70% di minggu ke-3",
+        "A: bereaksi emosional, menegur di depan umum · B: ambil alih dan kerjakan sendiri",
+        "C: menunda, tunggu masalah hilang, tidak eskalasi",
+        "D: akui, cari akar, tetapkan tindakan · E: beri ruang tim menyelesaikan, pantau"
+      ],
+      [
+        "4",
+        "Nasabah komplain keras di banking hall",
+        "A: bereaksi emosional, menegur di depan umum · B: ambil alih dan kerjakan sendiri",
+        "C: menunda, tunggu masalah hilang, tidak eskalasi",
+        "D: akui, cari akar, tetapkan tindakan · E: beri ruang tim menyelesaikan, pantau"
+      ],
+      [
+        "5",
+        "Migrasi sistem mundur 2 minggu",
+        "A: bereaksi emosional, menegur di depan umum · B: ambil alih dan kerjakan sendiri",
+        "C: menunda, tunggu masalah hilang, tidak eskalasi",
+        "D: akui, cari akar, tetapkan tindakan · E: beri ruang tim menyelesaikan, pantau"
+      ],
+      [
+        "6",
+        "Audit finding lewat batas komitmen",
+        "A: bereaksi emosional, menegur di depan umum · B: ambil alih dan kerjakan sendiri",
+        "C: menunda, tunggu masalah hilang, tidak eskalasi",
+        "D: akui, cari akar, tetapkan tindakan · E: beri ruang tim menyelesaikan, pantau"
+      ],
+      [
+        "7",
+        "Dua senior officer saling menyalahkan",
+        "A: bereaksi emosional, menegur di depan umum · B: ambil alih dan kerjakan sendiri",
+        "C: menunda, tunggu masalah hilang, tidak eskalasi",
+        "D: akui, cari akar, tetapkan tindakan · E: beri ruang tim menyelesaikan, pantau"
+      ],
+      [
+        "8",
+        "Atasan minta data 1 jam lagi",
+        "A: bereaksi emosional, menegur di depan umum · B: ambil alih dan kerjakan sendiri",
+        "C: menunda, tunggu masalah hilang, tidak eskalasi",
+        "D: akui, cari akar, tetapkan tindakan · E: beri ruang tim menyelesaikan, pantau"
+      ],
+      [
+        "9",
+        "Staf berprestasi resign: merasa tidak berkembang",
+        "A: bereaksi emosional, menegur di depan umum · B: ambil alih dan kerjakan sendiri",
+        "C: menunda, tunggu masalah hilang, tidak eskalasi",
+        "D: akui, cari akar, tetapkan tindakan · E: beri ruang tim menyelesaikan, pantau"
+      ],
+      [
+        "10",
+        "Arahan baru dari kantor pusat tanpa detail",
+        "A: bereaksi emosional, menegur di depan umum · B: ambil alih dan kerjakan sendiri",
+        "C: menunda, tunggu masalah hilang, tidak eskalasi",
+        "D: akui, cari akar, tetapkan tindakan · E: beri ruang tim menyelesaikan, pantau"
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        "Game 3 · Priority Poker — kartu aktivitas, twist, dan kunci",
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        "No",
+        "Kartu aktivitas",
+        "Level awal (kunci)",
+        "Kartu twist → level akhir",
+        null
+      ],
+      [
+        "1",
+        "Komplain nasabah prioritas via call center",
+        "P2",
+        "Komplain ternyata viral di media sosial → P1",
+        null
+      ],
+      [
+        "2",
+        "Laporan kepatuhan bulanan",
+        "P2",
+        "Regulator meminta pukul 12.00 hari ini → P1",
+        null
+      ],
+      [
+        "3",
+        "Transaksi abnormal di rekening nasabah",
+        "P2",
+        "Ternyata dilakukan staf internal → P1, eskalasi anti-fraud",
+        null
+      ],
+      [
+        "4",
+        "Review target bisnis bulanan",
+        "P2",
+        "Tidak berubah (tetap P2)",
+        null
+      ],
+      [
+        "5",
+        "Coaching staf baru",
+        "P3→P2",
+        "Staf baru akan pegang counter sendiri besok → P2",
+        null
+      ],
+      [
+        "6",
+        "Undangan rapat koordinasi rutin",
+        "P4",
+        "Agenda tidak jelas → tetap P4 / tolak",
+        null
+      ],
+      [
+        "7",
+        "Approval kredit dengan dokumen lengkap",
+        "P2",
+        "Nasabah ancam pindah bank → P1 bila SLA terlewat",
+        null
+      ],
+      [
+        "8",
+        "Grup WhatsApp ramai diskusi umum",
+        "P4",
+        "Tetap P4 — batch 2× sehari",
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        "Game 4 · Calendar Tetris — kartu jadwal & disrupsi (disrupsi dibuka setelah kalender pertama jadi)",
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        "Jenis",
+        "Kartu",
+        null,
+        null,
+        null
+      ],
+      [
+        "Fixed",
+        "Rapat komite kredit Selasa 09.00–11.00",
+        null,
+        null,
+        null
+      ],
+      [
+        "Fixed",
+        "Kunjungan nasabah korporasi Rabu 14.00",
+        null,
+        null,
+        null
+      ],
+      [
+        "Deadline",
+        "Laporan kepatuhan Kamis 12.00",
+        null,
+        null,
+        null
+      ],
+      [
+        "Task",
+        "Analisis 3 berkas kredit (3 jam)",
+        null,
+        null,
+        null
+      ],
+      [
+        "Task",
+        "Coaching 2 staf (2 × 45 menit)",
+        null,
+        null,
+        null
+      ],
+      [
+        "Task",
+        "Approval transaksi harian (30 menit/hari)",
+        null,
+        null,
+        null
+      ],
+      [
+        "Request",
+        "Management minta paparan kinerja Jumat",
+        null,
+        null,
+        null
+      ],
+      [
+        "Focus",
+        "Deep work: rencana strategi cabang (2 jam)",
+        null,
+        null,
+        null
+      ],
+      [
+        "Disrupsi 1",
+        "System down Rabu pagi 2 jam",
+        null,
+        null,
+        null
+      ],
+      [
+        "Disrupsi 2",
+        "Satu staf absen Kamis",
+        null,
+        null,
+        null
+      ],
+      [
+        "Disrupsi 3",
+        "Urgent customer datang Selasa siang",
+        null,
+        null,
+        null
+      ],
+      [
+        "Disrupsi 4",
+        "Regulator request data Jumat pagi",
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        "Game 5 · Delegation Relay — amplop instruksi leader",
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        "Bagian",
+        "Isi",
+        null,
+        null,
+        null
+      ],
+      [
+        "Tugas",
+        "Siapkan paket presentasi 'Rencana perbaikan layanan cabang' dalam 20 menit: (1) ringkasan 5 komplain teratas, (2) 3 opsi perbaikan dengan biaya, (3) timeline 4 minggu, (4) satu poster A3 untuk banking hall.",
+        null,
+        null,
+        null
+      ],
+      [
+        "Aturan",
+        "Leader dilarang menulis/menggambar. Leader hanya boleh menjelaskan, bertanya, dan memeriksa di checkpoint.",
+        null,
+        null,
+        null
+      ],
+      [
+        "Observer cek",
+        "What · Why · Expected outcome · Authority · Boundary · Deadline · Checkpoint · Evidence (centang yang disampaikan leader)",
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        "Game 6 · Fact or Fiction — kartu pernyataan",
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        "No",
+        "Pernyataan",
+        "Kunci zona",
+        "Data tambahan (dibuka trainer)",
+        null
+      ],
+      [
+        "1",
+        "Cabang gagal capai target karena staf malas",
+        "Assumption",
+        "Kunjungan nasabah turun; 2 RM cuti panjang",
+        null
+      ],
+      [
+        "2",
+        "Nasabah ini aman karena sudah 15 tahun",
+        "Assumption",
+        "Pola transaksi berubah drastis 3 bulan terakhir",
+        null
+      ],
+      [
+        "3",
+        "Complaint naik karena aplikasi baru",
+        "Unknown",
+        "Kenaikan juga terjadi di kanal non-aplikasi",
+        null
+      ],
+      [
+        "4",
+        "NPL naik karena ekonomi",
+        "Assumption",
+        "Kenaikan terkonsentrasi pada satu produk dan satu periode pencairan",
+        null
+      ],
+      [
+        "5",
+        "Funding cabang turun 8% dibanding bulan lalu (laporan core banking)",
+        "Fact",
+        "Data tervalidasi dari sistem",
+        null
+      ],
+      [
+        "6",
+        "Nasabah muda tidak suka datang ke cabang",
+        "Opinion",
+        "Data kunjungan per usia belum pernah dianalisis",
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        "Game 7 · Detective Room — 12 evidence card (TAT kredit naik 40%)",
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        "No",
+        "Topik pertanyaan",
+        "Evidence",
+        "Kategori (trainer)",
+        null
+      ],
+      [
+        "1",
+        "Volume aplikasi",
+        "Volume naik tipis (±5%), tidak sebanding kenaikan TAT 40%",
+        "Relevan",
+        null
+      ],
+      [
+        "2",
+        "Waktu per tahap",
+        "Tahap verifikasi dokumen paling lama",
+        "Kunci",
+        null
+      ],
+      [
+        "3",
+        "Kapasitas tim",
+        "Satu analis senior pindah unit 2 bulan lalu",
+        "Kunci",
+        null
+      ],
+      [
+        "4",
+        "Perubahan kebijakan",
+        "Checklist dokumen baru berlaku bulan lalu",
+        "Kunci",
+        null
+      ],
+      [
+        "5",
+        "Data rework",
+        "Banyak berkas dikembalikan karena dokumen kurang",
+        "Kunci",
+        null
+      ],
+      [
+        "6",
+        "Segmen",
+        "Kenaikan TAT terbesar pada kredit produktif",
+        "Relevan",
+        null
+      ],
+      [
+        "7",
+        "Sistem",
+        "Tidak ada downtime signifikan di LOS",
+        "Pengecoh",
+        null
+      ],
+      [
+        "8",
+        "Appraisal",
+        "SLA appraiser eksternal stabil",
+        "Pengecoh",
+        null
+      ],
+      [
+        "9",
+        "Komite",
+        "Jadwal komite tidak berubah",
+        "Pengecoh",
+        null
+      ],
+      [
+        "10",
+        "Kepuasan RM",
+        "RM mengeluh harus mengulang permintaan dokumen",
+        "Relevan",
+        null
+      ],
+      [
+        "11",
+        "Sosialisasi",
+        "Checklist baru tidak disosialisasikan ke nasabah/RM",
+        "Kunci",
+        null
+      ],
+      [
+        "12",
+        "Benchmark",
+        "Cabang lain dengan analis lengkap TAT naik hanya 10%",
+        "Relevan",
+        null
+      ],
+      [
+        "Kunci: bottleneck di verifikasi dokumen akibat checklist baru tanpa sosialisasi + berkurangnya satu analis senior. Bukan semata kenaikan volume.",
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        "Game 8 · Root Cause Race — data pendukung (complaint naik 40%)",
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        "Data",
+        "Isi",
+        null,
+        null,
+        null
+      ],
+      [
+        "Per kategori",
+        "Keluhan 'proses lama' naik 70%; kategori lain stabil",
+        null,
+        null,
+        null
+      ],
+      [
+        "Per kanal",
+        "Kenaikan di cabang dan call center, bukan hanya aplikasi",
+        null,
+        null,
+        null
+      ],
+      [
+        "Per bulan",
+        "Kenaikan mulai setelah jam layanan teller dikurangi",
+        null,
+        null,
+        null
+      ],
+      [
+        "Per produk",
+        "Konsentrasi pada pembukaan rekening dan update data",
+        null,
+        null,
+        null
+      ],
+      [
+        "Proses",
+        "Antrean CS rata-rata 35 menit (sebelumnya 15)",
+        null,
+        null,
+        null
+      ],
+      [
+        "People",
+        "Dua CS dipindah ke unit funding",
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        "Game 9 · Bias Trap — kartu keputusan",
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        "No",
+        "Kartu",
+        "Bias (kunci)",
+        "Better question (kunci)",
+        null
+      ],
+      [
+        "1",
+        "Nasabah VIP sudah lama menjadi nasabah",
+        "Halo effect",
+        "Apa yang berubah pada kondisi usahanya sekarang?",
+        null
+      ],
+      [
+        "2",
+        "Direktur menyukai opsi A",
+        "Authority",
+        "Bagaimana A dibanding B dan C pada kriteria yang sama?",
+        null
+      ],
+      [
+        "3",
+        "Produk ini sukses tahun lalu",
+        "Recency / status quo",
+        "Asumsi apa yang membuatnya sukses, masih berlaku?",
+        null
+      ],
+      [
+        "4",
+        "Semua kompetitor menggunakan sistem ini",
+        "Bandwagon / groupthink",
+        "Masalah apa yang mau diselesaikan sistem ini?",
+        null
+      ],
+      [
+        "5",
+        "Kita sudah keluar Rp 2 M, lanjutkan saja",
+        "Sunk cost",
+        "Jika mulai dari nol hari ini, apakah kita akan memilih ini?",
+        null
+      ],
+      [
+        "6",
+        "Pengajuan limit Rp 10 M, kita tawar jadi 8 M",
+        "Anchoring",
+        "Berapa limit yang didukung arus kas, terlepas dari angka awal?",
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        "Game 11 · 60-Second Boardroom — kartu kasus",
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        "Kasus",
+        "Brief",
+        null,
+        null,
+        null
+      ],
+      [
+        "Kasus A",
+        "Komplain layanan naik 40% di 3 cabang; rekomendasikan langkah 30 hari.",
+        null,
+        null,
+        null
+      ],
+      [
+        "Kasus B",
+        "Pipeline kredit UMKM turun 25%; pilih antara promosi atau perbaikan proses.",
+        null,
+        null,
+        null
+      ],
+      [
+        "Kasus C",
+        "Audit finding overdue 4 bulan; minta tambahan sumber daya ke Direksi.",
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        "War Room — kartu kondisi awal",
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        "No",
+        "Kondisi",
+        null,
+        null,
+        null
+      ],
+      [
+        "1",
+        "Business target hanya 82%",
+        null,
+        null,
+        null
+      ],
+      [
+        "2",
+        "NPL meningkat",
+        null,
+        null,
+        null
+      ],
+      [
+        "3",
+        "Customer complaint naik",
+        null,
+        null,
+        null
+      ],
+      [
+        "4",
+        "Audit finding overdue",
+        null,
+        null,
+        null
+      ],
+      [
+        "5",
+        "Regulatory deadline mendekat",
+        null,
+        null,
+        null
+      ],
+      [
+        "6",
+        "System instability",
+        null,
+        null,
+        null
+      ],
+      [
+        "7",
+        "Two employees resign",
+        null,
+        null,
+        null
+      ],
+      [
+        "8",
+        "Project digitalisasi terlambat",
+        null,
+        null,
+        null
+      ],
+      [
+        "9",
+        "Fraud alert muncul",
+        null,
+        null,
+        null
+      ],
+      [
+        "10",
+        "Top customer mengancam pindah",
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        "War Room — event card (± setiap 7–10 menit)",
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        "Event",
+        "Kejadian",
+        "Perilaku yang diamati observer",
+        null,
+        null
+      ],
+      [
+        "1",
+        "Media sosial mulai membahas complaint",
+        "Communication + escalation ke corporate communication",
+        null,
+        null
+      ],
+      [
+        "2",
+        "System down",
+        "Business continuity, komunikasi nasabah",
+        null,
+        null
+      ],
+      [
+        "3",
+        "Direksi minta report 1 jam lagi",
+        "Delegasi penyusunan, fokus pesan SFAIRA",
+        null,
+        null
+      ],
+      [
+        "4",
+        "Staf menemukan error laporan",
+        "Ownership, koreksi sebelum kirim",
+        null,
+        null
+      ],
+      [
+        "5",
+        "Key employee sakit",
+        "Re-delegasi, buffer",
+        null,
+        null
+      ],
+      [
+        "6",
+        "Customer VIP datang",
+        "Delegasi ke RM, jangan tinggalkan krisis",
+        null,
+        null
+      ],
+      [
+        "7",
+        "Potential fraud makin serius",
+        "Wajib eskalasi anti-fraud & kepatuhan sekarang",
+        null,
+        null
+      ]
+    ]
+  }
+}

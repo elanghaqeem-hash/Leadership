@@ -3,32 +3,194 @@
   "sha256": "0a2565947ade43562f13e74300ef022873aea6ca05e3ed74efd85ca60ebe5205",
   "sheetCount": 27,
   "sheets": [
-    {"index":0,"name":"Petunjuk","reportedRange":"A1:C33","formulaCount":0,"maxFormulaRow":null},
-    {"index":1,"name":"1 Self-Diagnostic","reportedRange":"A1:F25","formulaCount":23,"maxFormulaRow":16},
-    {"index":2,"name":"2 480-Minute","reportedRange":"A1:M45","formulaCount":55,"maxFormulaRow":44},
-    {"index":3,"name":"3 Priority Scorecard","reportedRange":"A1:K28","formulaCount":46,"maxFormulaRow":21},
-    {"index":4,"name":"4 Weekly Planner","reportedRange":"A1:J23","formulaCount":16,"maxFormulaRow":15},
-    {"index":5,"name":"5 Big3 & Meeting","reportedRange":"A1:H27","formulaCount":12,"maxFormulaRow":27},
-    {"index":6,"name":"6 Delegation","reportedRange":"A1:F28","formulaCount":4,"maxFormulaRow":28},
-    {"index":7,"name":"7 GROW & SBI","reportedRange":"A1:C21","formulaCount":3,"maxFormulaRow":21},
-    {"index":8,"name":"8 Fact-Assumption","reportedRange":"A1:E25","formulaCount":1,"maxFormulaRow":16},
-    {"index":9,"name":"9 Root Cause","reportedRange":"A1:E38","formulaCount":14,"maxFormulaRow":28},
-    {"index":10,"name":"10 Bias Checklist","reportedRange":"A1:D17","formulaCount":2,"maxFormulaRow":17},
-    {"index":11,"name":"11 Decision Matrix","reportedRange":"A1:F22","formulaCount":14,"maxFormulaRow":21},
-    {"index":12,"name":"12 Pre-Mortem","reportedRange":"A1:J7","formulaCount":2,"maxFormulaRow":7},
-    {"index":13,"name":"13 Decision Log","reportedRange":"A1:I5","formulaCount":0,"maxFormulaRow":null},
-    {"index":14,"name":"14 Action Tracker","reportedRange":"A1:I31","formulaCount":45,"maxFormulaRow":31},
-    {"index":15,"name":"15 Arena Scoring","reportedRange":"A1:U40","formulaCount":88,"maxFormulaRow":14},
-    {"index":16,"name":"16 Decision Auction","reportedRange":"A1:Y30","formulaCount":39,"maxFormulaRow":28},
-    {"index":17,"name":"17 War Room Score","reportedRange":"A1:K26","formulaCount":67,"maxFormulaRow":26},
-    {"index":18,"name":"18 Boardroom Rubric","reportedRange":"A1:J5","formulaCount":0,"maxFormulaRow":null},
-    {"index":19,"name":"19 Pre-Post Test","reportedRange":"A1:G25","formulaCount":0,"maxFormulaRow":null},
-    {"index":20,"name":"19b Test Scoring","reportedRange":"A1:X58","formulaCount":95,"maxFormulaRow":56},
-    {"index":21,"name":"20 30-Day Plan","reportedRange":"A1:D28","formulaCount":6,"maxFormulaRow":18},
-    {"index":22,"name":"21 Manager Follow-up","reportedRange":"A1:D20","formulaCount":3,"maxFormulaRow":13},
-    {"index":23,"name":"22 Impact Metrics","reportedRange":"A1:G16","formulaCount":19,"maxFormulaRow":16},
-    {"index":24,"name":"23 AAR & SSC","reportedRange":"A1:A22","formulaCount":0,"maxFormulaRow":null},
-    {"index":25,"name":"24 Kartu Game","reportedRange":"A1:E120","formulaCount":0,"maxFormulaRow":null},
-    {"index":26,"name":"25 Evaluasi Training","reportedRange":"A1:E23","formulaCount":3,"maxFormulaRow":9}
+    {
+      "index": 0,
+      "name": "Petunjuk",
+      "reportedRange": "A1:C33",
+      "formulaCount": 0,
+      "maxFormulaRow": null
+    },
+    {
+      "index": 1,
+      "name": "1 Self-Diagnostic",
+      "reportedRange": "A1:F25",
+      "formulaCount": 23,
+      "maxFormulaRow": 16
+    },
+    {
+      "index": 2,
+      "name": "2 480-Minute",
+      "reportedRange": "A1:M45",
+      "formulaCount": 55,
+      "maxFormulaRow": 44
+    },
+    {
+      "index": 3,
+      "name": "3 Priority Scorecard",
+      "reportedRange": "A1:K28",
+      "formulaCount": 46,
+      "maxFormulaRow": 21
+    },
+    {
+      "index": 4,
+      "name": "4 Weekly Planner",
+      "reportedRange": "A1:J23",
+      "formulaCount": 16,
+      "maxFormulaRow": 15
+    },
+    {
+      "index": 5,
+      "name": "5 Big3 & Meeting",
+      "reportedRange": "A1:H27",
+      "formulaCount": 12,
+      "maxFormulaRow": 27
+    },
+    {
+      "index": 6,
+      "name": "6 Delegation",
+      "reportedRange": "A1:F28",
+      "formulaCount": 4,
+      "maxFormulaRow": 28
+    },
+    {
+      "index": 7,
+      "name": "7 GROW & SBI",
+      "reportedRange": "A1:C21",
+      "formulaCount": 3,
+      "maxFormulaRow": 21
+    },
+    {
+      "index": 8,
+      "name": "8 Fact-Assumption",
+      "reportedRange": "A1:E25",
+      "formulaCount": 1,
+      "maxFormulaRow": 16
+    },
+    {
+      "index": 9,
+      "name": "9 Root Cause",
+      "reportedRange": "A1:E38",
+      "formulaCount": 14,
+      "maxFormulaRow": 28
+    },
+    {
+      "index": 10,
+      "name": "10 Bias Checklist",
+      "reportedRange": "A1:D17",
+      "formulaCount": 2,
+      "maxFormulaRow": 17
+    },
+    {
+      "index": 11,
+      "name": "11 Decision Matrix",
+      "reportedRange": "A1:F22",
+      "formulaCount": 14,
+      "maxFormulaRow": 21
+    },
+    {
+      "index": 12,
+      "name": "12 Pre-Mortem",
+      "reportedRange": "A1:J7",
+      "formulaCount": 2,
+      "maxFormulaRow": 7
+    },
+    {
+      "index": 13,
+      "name": "13 Decision Log",
+      "reportedRange": "A1:I5",
+      "formulaCount": 0,
+      "maxFormulaRow": null
+    },
+    {
+      "index": 14,
+      "name": "14 Action Tracker",
+      "reportedRange": "A1:I31",
+      "formulaCount": 45,
+      "maxFormulaRow": 31
+    },
+    {
+      "index": 15,
+      "name": "15 Arena Scoring",
+      "reportedRange": "A1:U40",
+      "formulaCount": 88,
+      "maxFormulaRow": 14
+    },
+    {
+      "index": 16,
+      "name": "16 Decision Auction",
+      "reportedRange": "A1:Y30",
+      "formulaCount": 39,
+      "maxFormulaRow": 28
+    },
+    {
+      "index": 17,
+      "name": "17 War Room Score",
+      "reportedRange": "A1:K26",
+      "formulaCount": 67,
+      "maxFormulaRow": 26
+    },
+    {
+      "index": 18,
+      "name": "18 Boardroom Rubric",
+      "reportedRange": "A1:J5",
+      "formulaCount": 0,
+      "maxFormulaRow": null
+    },
+    {
+      "index": 19,
+      "name": "19 Pre-Post Test",
+      "reportedRange": "A1:G25",
+      "formulaCount": 0,
+      "maxFormulaRow": null
+    },
+    {
+      "index": 20,
+      "name": "19b Test Scoring",
+      "reportedRange": "A1:X58",
+      "formulaCount": 95,
+      "maxFormulaRow": 56
+    },
+    {
+      "index": 21,
+      "name": "20 30-Day Plan",
+      "reportedRange": "A1:D28",
+      "formulaCount": 6,
+      "maxFormulaRow": 18
+    },
+    {
+      "index": 22,
+      "name": "21 Manager Follow-up",
+      "reportedRange": "A1:D20",
+      "formulaCount": 3,
+      "maxFormulaRow": 13
+    },
+    {
+      "index": 23,
+      "name": "22 Impact Metrics",
+      "reportedRange": "A1:G16",
+      "formulaCount": 19,
+      "maxFormulaRow": 16
+    },
+    {
+      "index": 24,
+      "name": "23 AAR & SSC",
+      "reportedRange": "A1:A22",
+      "formulaCount": 0,
+      "maxFormulaRow": null
+    },
+    {
+      "index": 25,
+      "name": "24 Kartu Game",
+      "reportedRange": "A1:E120",
+      "formulaCount": 0,
+      "maxFormulaRow": null
+    },
+    {
+      "index": 26,
+      "name": "25 Evaluasi Training",
+      "reportedRange": "A1:E23",
+      "formulaCount": 3,
+      "maxFormulaRow": 9
+    }
   ]
 }
