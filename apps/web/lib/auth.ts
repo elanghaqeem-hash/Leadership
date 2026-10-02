@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { cookies, headers } from 'next/headers';
 import type { PrismaClient } from '@prisma/client';
-import { prisma } from '@ltw/db';
+import { withRequestPrisma } from '@ltw/db';
 import type { Permission, Role } from '@ltw/authz';
 import { can } from '@ltw/authz';
 
@@ -10,7 +10,10 @@ const SESSION_TTL_HOURS = Number(process.env.SESSION_TTL_HOURS || 12);
 
 export class AuthError extends Error {
   status: number;
-  constructor(message = 'Unauthorized', status = 401) { super(message); this.status = status; }
+  constructor(message = 'Unauthorized', status = 401) {
+    super(message);
+    this.status = status;
+  }
 }
 
 export const hashToken = (token: string) => createHash('sha256').update(token).digest('hex');
@@ -19,15 +22,22 @@ export const hashIp = (ip: string | null) => ip ? createHash('sha256').update(ip
 async function requestMeta() {
   const h = await headers();
   const raw = h.get('x-forwarded-for')?.split(',')[0]?.trim() ?? h.get('x-real-ip');
-  return { ipHash: hashIp(raw), userAgent: h.get('user-agent')?.slice(0, 500) ?? null };
+  return {
+    ipHash: hashIp(raw),
+    userAgent: h.get('user-agent')?.slice(0, 500) ?? null,
+  };
 }
 
-export async function createSession(userId: string, db: PrismaClient = prisma) {
+async function createSessionWithDb(userId: string, db: PrismaClient) {
   const token = randomBytes(32).toString('base64url');
   const tokenHash = hashToken(token);
   const expiresAt = new Date(Date.now() + SESSION_TTL_HOURS * 60 * 60 * 1000);
   const meta = await requestMeta();
-  await db.authSession.create({ data: { userId, tokenHash, expiresAt, ...meta } });
+
+  await db.authSession.create({
+    data: { userId, tokenHash, expiresAt, ...meta },
+  });
+
   const jar = await cookies();
   jar.set(COOKIE_NAME, token, {
     httpOnly: true,
@@ -36,33 +46,76 @@ export async function createSession(userId: string, db: PrismaClient = prisma) {
     path: '/',
     expires: expiresAt,
   });
+
   return expiresAt;
 }
 
-export async function revokeCurrentSession() {
-  const jar = await cookies();
-  const token = jar.get(COOKIE_NAME)?.value;
-  if (token) await prisma.authSession.updateMany({ where: { tokenHash: hashToken(token), revokedAt: null }, data: { revokedAt: new Date() } });
-  jar.set(COOKIE_NAME, '', { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/', maxAge: 0 });
+export async function createSession(userId: string, db?: PrismaClient) {
+  if (db) return createSessionWithDb(userId, db);
+  return withRequestPrisma((requestDb) => createSessionWithDb(userId, requestDb));
 }
 
-export async function getCurrentUser() {
+export async function revokeCurrentSession(db?: PrismaClient) {
+  const jar = await cookies();
+  const token = jar.get(COOKIE_NAME)?.value;
+
+  const revoke = async (requestDb: PrismaClient) => {
+    if (token) {
+      await requestDb.authSession.updateMany({
+        where: { tokenHash: hashToken(token), revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+    }
+  };
+
+  if (db) await revoke(db);
+  else await withRequestPrisma(revoke);
+
+  jar.set(COOKIE_NAME, '', {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+    maxAge: 0,
+  });
+}
+
+async function getCurrentUserWithDb(db: PrismaClient) {
   const jar = await cookies();
   const token = jar.get(COOKIE_NAME)?.value;
   if (!token) return null;
-  const session = await prisma.authSession.findUnique({
+
+  const session = await db.authSession.findUnique({
     where: { tokenHash: hashToken(token) },
     include: { user: true },
   });
-  if (!session || session.revokedAt || session.expiresAt <= new Date() || !session.user.isActive) return null;
-  if (Date.now() - session.lastSeenAt.getTime() > 5 * 60 * 1000) {
-    void prisma.authSession.update({ where: { id: session.id }, data: { lastSeenAt: new Date() } }).catch(() => undefined);
+
+  if (
+    !session ||
+    session.revokedAt ||
+    session.expiresAt <= new Date() ||
+    !session.user.isActive
+  ) {
+    return null;
   }
+
+  if (Date.now() - session.lastSeenAt.getTime() > 5 * 60 * 1000) {
+    await db.authSession.update({
+      where: { id: session.id },
+      data: { lastSeenAt: new Date() },
+    }).catch(() => undefined);
+  }
+
   return session.user;
 }
 
-export async function requireUser() {
-  const user = await getCurrentUser();
+export async function getCurrentUser(db?: PrismaClient) {
+  if (db) return getCurrentUserWithDb(db);
+  return withRequestPrisma(getCurrentUserWithDb);
+}
+
+export async function requireUser(db?: PrismaClient) {
+  const user = await getCurrentUser(db);
   if (!user) throw new AuthError();
   return user;
 }
@@ -73,47 +126,77 @@ function mapTenantRole(role: string): Role | null {
   return null;
 }
 
-export async function assertPermission(permission: Permission, input: {
-  tenantId?: string;
-  batchId?: string;
-  teamId?: string;
-  resourceUserId?: string;
-  aggregateSize?: number;
-}) {
-  const user = await requireUser();
-  if (user.platformRole === 'SUPER_ADMIN' && can(permission, { role:'SUPER_ADMIN' })) return user;
+async function assertPermissionWithDb(
+  permission: Permission,
+  input: {
+    tenantId?: string;
+    batchId?: string;
+    teamId?: string;
+    resourceUserId?: string;
+    aggregateSize?: number;
+  },
+  db: PrismaClient,
+) {
+  const user = await requireUser(db);
+  if (user.platformRole === 'SUPER_ADMIN' && can(permission, { role: 'SUPER_ADMIN' })) {
+    return user;
+  }
 
   let tenantId = input.tenantId;
   if (input.batchId && !tenantId) {
-    const batch = await prisma.batch.findUnique({ where: { id: input.batchId }, select: { tenantId: true } });
+    const batch = await db.batch.findUnique({
+      where: { id: input.batchId },
+      select: { tenantId: true },
+    });
     if (!batch) throw new AuthError('Batch tidak ditemukan', 404);
     tenantId = batch.tenantId;
   }
   if (!tenantId) throw new AuthError('Tenant context required', 400);
 
-  const tenantMembership = await prisma.tenantMembership.findUnique({ where: { tenantId_userId: { tenantId, userId: user.id } } });
+  const tenantMembership = await db.tenantMembership.findUnique({
+    where: { tenantId_userId: { tenantId, userId: user.id } },
+  });
+
   const candidateRoles: Role[] = [];
   const tenantRole = tenantMembership ? mapTenantRole(tenantMembership.role) : null;
   if (tenantRole) candidateRoles.push(tenantRole);
 
   if (input.batchId) {
-    const membership = await prisma.batchMembership.findUnique({ where: { batchId_userId: { batchId: input.batchId, userId: user.id } } });
+    const membership = await db.batchMembership.findUnique({
+      where: { batchId_userId: { batchId: input.batchId, userId: user.id } },
+    });
     if (membership) candidateRoles.push(membership.role as Role);
   }
 
   for (const role of candidateRoles) {
     let isAssignedTeam = false;
     let isMappedSubordinate = false;
+
     if (role === 'CO_FACILITATOR' && input.teamId && input.batchId) {
-      isAssignedTeam = Boolean(await prisma.observerTeamAssignment.findUnique({
-        where: { batchId_observerUserId_teamId: { batchId: input.batchId, observerUserId: user.id, teamId: input.teamId } },
+      isAssignedTeam = Boolean(await db.observerTeamAssignment.findUnique({
+        where: {
+          batchId_observerUserId_teamId: {
+            batchId: input.batchId,
+            observerUserId: user.id,
+            teamId: input.teamId,
+          },
+        },
       }));
     }
+
     if (role === 'LINE_MANAGER' && input.resourceUserId && input.batchId) {
-      isMappedSubordinate = Boolean(await prisma.participantManagerLink.findUnique({
-        where: { batchId_participantUserId: { batchId: input.batchId, participantUserId: input.resourceUserId } },
-      }).then((x) => x?.managerUserId === user.id));
+      isMappedSubordinate = Boolean(
+        await db.participantManagerLink.findUnique({
+          where: {
+            batchId_participantUserId: {
+              batchId: input.batchId,
+              participantUserId: input.resourceUserId,
+            },
+          },
+        }).then((x) => x?.managerUserId === user.id),
+      );
     }
+
     if (can(permission, {
       role,
       actorTenantId: tenantId,
@@ -124,19 +207,70 @@ export async function assertPermission(permission: Permission, input: {
       isAssignedTeam,
       isMappedSubordinate,
       aggregateSize: input.aggregateSize,
-    })) return user;
+    })) {
+      return user;
+    }
   }
+
   throw new AuthError('Forbidden', 403);
 }
 
-export async function getUserAccessSnapshot(userId: string) {
-  const user = await prisma.user.findUnique({
+export async function assertPermission(
+  permission: Permission,
+  input: {
+    tenantId?: string;
+    batchId?: string;
+    teamId?: string;
+    resourceUserId?: string;
+    aggregateSize?: number;
+  },
+  db?: PrismaClient,
+) {
+  if (db) return assertPermissionWithDb(permission, input, db);
+  return withRequestPrisma((requestDb) => assertPermissionWithDb(permission, input, requestDb));
+}
+
+async function getUserAccessSnapshotWithDb(userId: string, db: PrismaClient) {
+  return db.user.findUnique({
     where: { id: userId },
     select: {
-      id:true,email:true,name:true,platformRole:true,mfaEnabled:true,
-      tenantMemberships:{ include:{tenant:{select:{id:true,name:true,slug:true,isActive:true}}}},
-      batchMemberships:{ include:{batch:{select:{id:true,tenantId:true,code:true,name:true,status:true,startDate:true,endDate:true}}}},
+      id: true,
+      email: true,
+      name: true,
+      platformRole: true,
+      mfaEnabled: true,
+      tenantMemberships: {
+        include: {
+          tenant: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              isActive: true,
+            },
+          },
+        },
+      },
+      batchMemberships: {
+        include: {
+          batch: {
+            select: {
+              id: true,
+              tenantId: true,
+              code: true,
+              name: true,
+              status: true,
+              startDate: true,
+              endDate: true,
+            },
+          },
+        },
+      },
     },
   });
-  return user;
+}
+
+export async function getUserAccessSnapshot(userId: string, db?: PrismaClient) {
+  if (db) return getUserAccessSnapshotWithDb(userId, db);
+  return withRequestPrisma((requestDb) => getUserAccessSnapshotWithDb(userId, requestDb));
 }
