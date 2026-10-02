@@ -43,6 +43,8 @@ export async function withRequestPrisma<T>(fn: (db: PrismaClient) => Promise<T>)
   try {
     return await fn(db);
   } finally {
-    await db.$disconnect().catch(() => undefined);
+    // Do not hold the HTTP response open for connection cleanup.
+    // The disconnect promise is still started immediately and errors are contained.
+    void db.$disconnect().catch(() => undefined);
   }
 }
