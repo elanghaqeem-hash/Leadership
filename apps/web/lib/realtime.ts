@@ -1,4 +1,5 @@
 import { EventEmitter } from 'node:events';
+import { invalidateTeamLeaderboard } from '@/lib/team-leaderboard';
 
 type BatchEvent = {
   batchId: string;
@@ -22,6 +23,7 @@ function bus() {
 }
 
 export function publishBatchEvent(batchId: string, type: string, resourceId?: string) {
+  invalidateTeamLeaderboard(batchId);
   const event: BatchEvent = { batchId, type, resourceId, at: new Date().toISOString() };
   bus().emit('batch:' + batchId, event);
 }
