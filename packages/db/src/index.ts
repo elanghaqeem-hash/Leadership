@@ -37,14 +37,23 @@ export async function withPlatformContext<T>(fn: (tx: Prisma.TransactionClient) 
  * Use this helper for request-bound routes and disconnect before returning.
  */
 export async function withRequestPrisma<T>(fn: (db: PrismaClient) => Promise<T>): Promise<T> {
+  const isCloudflareWorker =
+    typeof navigator !== 'undefined' &&
+    navigator.userAgent === 'Cloudflare-Workers';
+
+  // A conventional Node server can safely reuse its process-local Prisma pool.
+  // Cloudflare Workers must not reuse a socket-backed Prisma client across requests.
+  if (!isCloudflareWorker) {
+    return fn(prisma);
+  }
+
   const db = new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error'],
   });
   try {
     return await fn(db);
   } finally {
-    // Do not hold the HTTP response open for connection cleanup.
-    // The disconnect promise is still started immediately and errors are contained.
+    // Start cleanup immediately without holding the HTTP response open.
     void db.$disconnect().catch(() => undefined);
   }
 }
