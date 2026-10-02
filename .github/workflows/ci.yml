@@ -88,6 +88,9 @@ jobs:
       - name: Classroom 30-participant latency smoke
         run: npm run test:classroom:load
 
+      - name: Multi-game 30-participant load smoke
+        run: npm run test:classroom:games
+
       - name: PDF and XLSX export smoke
         run: npm run test:reports:http
 
