@@ -40,7 +40,7 @@ export async function POST(req:Request){
 
   const results:Array<Record<string,unknown>>=[];
   for(const plan of plans){
-    const checkpoints:(['D7'|'D14'|'D30'])=['D7','D14','D30'];
+    const checkpoints:Array<'D7'|'D14'|'D30'>=['D7','D14','D30'];
     for(const kind of checkpoints){
       const due=checkpointDate(plan,kind);
       if(due<start||due>=end)continue;
