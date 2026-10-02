@@ -1,0 +1,39 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useBatchRealtime } from '@/hooks/useBatchRealtime';
+
+type Feed={
+ batch:{code:string;name:string;status:string;startDate:string;endDate:string};
+ population:{participants:number};
+ level1:{evaluationCompleted:number;completionPct:number;averageScore:number|null};
+ level2:{preCompleted:number;postCompleted:number;preAverage:number|null;postAverage:number|null;matchedGainCount:number;averageGain:number|null;selfDiagnosticMatched:number;averageSelfDiagnosticGain:number|null};
+ level3:{plansCreated:number;planCompletionPct:number;completedPlans:number;followUp:Record<string,{completed:number;completionPct:number;averageProgressPct:number|null;statuses:{ON_TRACK:number;PERLU_DORONGAN:number;PERLU_INTERVENSI:number}}>} ;
+ level4:{metricPairsCompleted:number;improvedMetricPairs:number;improvementRatePct:number|null;byMetric:Array<{code:string;name:string;direction:string;completed:number;improved:number;averagePercentChange:number|null}>};
+};
+
+function pct(v:number|null|undefined){return v===null||v===undefined?'—':v.toFixed(1)+'%'}
+function score(v:number|null|undefined,suffix=''){return v===null||v===undefined?'—':v.toFixed(2)+suffix}
+
+export default function ImpactDashboardClient({batchId}:{batchId:string}){
+ const[feed,setFeed]=useState<Feed|null>(null);const[error,setError]=useState('');
+ async function load(){const r=await fetch('/api/batches/'+batchId+'/impact',{cache:'no-store'});const d=await r.json();if(r.ok){setFeed(d);setError('')}else setError(d.error||'Gagal memuat impact dashboard')}
+ useEffect(()=>{void load()},[batchId]);useBatchRealtime(batchId,load,5000);
+ if(!feed)return <div className="p-6 text-sm text-slate-600">{error||'Memuat impact dashboard…'}</div>;
+ const follow=feed.level3.followUp;
+ return <div className="space-y-6">
+   <div className="rounded-3xl bg-slate-950 p-6 text-white"><div className="text-xs font-bold uppercase tracking-[.18em] text-amber-300">Training Impact Dashboard</div><div className="mt-2 flex flex-wrap items-end justify-between gap-4"><div><h2 className="text-3xl font-semibold">{feed.batch.name}</h2><p className="mt-1 text-sm text-slate-400">{feed.batch.code} · {feed.population.participants} participant · aggregate only</p></div><div className="rounded-2xl bg-white/5 px-4 py-3 text-sm"><div className="text-xs uppercase text-slate-400">Batch status</div><b>{feed.batch.status}</b></div></div></div>
+   <div className="grid gap-4 lg:grid-cols-4">
+     <section className="rounded-2xl border border-slate-200 bg-white p-5"><div className="text-xs font-bold uppercase tracking-wider text-slate-400">Level 1 · Reaction</div><div className="mt-3 text-3xl font-semibold text-navy">{score(feed.level1.averageScore,'/5')}</div><div className="mt-1 text-sm text-slate-600">{feed.level1.evaluationCompleted}/{feed.population.participants} evaluasi · {pct(feed.level1.completionPct)}</div></section>
+     <section className="rounded-2xl border border-slate-200 bg-white p-5"><div className="text-xs font-bold uppercase tracking-wider text-slate-400">Level 2 · Learning</div><div className="mt-3 text-3xl font-semibold text-navy">{feed.level2.averageGain===null?'—':(feed.level2.averageGain>=0?'+':'')+feed.level2.averageGain.toFixed(1)}</div><div className="mt-1 text-sm text-slate-600">Avg gain · {feed.level2.matchedGainCount} matched pre/post</div></section>
+     <section className="rounded-2xl border border-slate-200 bg-white p-5"><div className="text-xs font-bold uppercase tracking-wider text-slate-400">Level 3 · Behavior</div><div className="mt-3 text-3xl font-semibold text-navy">{pct(follow.D30?.averageProgressPct)}</div><div className="mt-1 text-sm text-slate-600">Avg D+30 progress · {follow.D30?.completed||0} follow-up</div></section>
+     <section className="rounded-2xl border border-slate-200 bg-white p-5"><div className="text-xs font-bold uppercase tracking-wider text-slate-400">Level 4 · Results</div><div className="mt-3 text-3xl font-semibold text-navy">{pct(feed.level4.improvementRatePct)}</div><div className="mt-1 text-sm text-slate-600">{feed.level4.improvedMetricPairs}/{feed.level4.metricPairsCompleted} metric pairs improved</div></section>
+   </div>
+   <div className="grid gap-6 lg:grid-cols-2">
+     <section className="rounded-2xl border border-slate-200 bg-white p-5"><h3 className="text-lg font-semibold text-navy">Learning evidence</h3><div className="mt-4 grid grid-cols-2 gap-3"><div className="rounded-xl bg-slate-50 p-4"><div className="text-xs uppercase text-slate-400">Pre average</div><div className="mt-1 text-2xl font-semibold">{score(feed.level2.preAverage)}</div><div className="text-xs text-slate-500">{feed.level2.preCompleted} completed</div></div><div className="rounded-xl bg-slate-50 p-4"><div className="text-xs uppercase text-slate-400">Post average</div><div className="mt-1 text-2xl font-semibold">{score(feed.level2.postAverage)}</div><div className="text-xs text-slate-500">{feed.level2.postCompleted} completed</div></div><div className="rounded-xl bg-slate-50 p-4 col-span-2"><div className="text-xs uppercase text-slate-400">Self-diagnostic gain</div><div className="mt-1 text-2xl font-semibold">{feed.level2.averageSelfDiagnosticGain===null?'—':(feed.level2.averageSelfDiagnosticGain>=0?'+':'')+feed.level2.averageSelfDiagnosticGain.toFixed(2)}</div><div className="text-xs text-slate-500">{feed.level2.selfDiagnosticMatched} matched participant</div></div></div></section>
+     <section className="rounded-2xl border border-slate-200 bg-white p-5"><h3 className="text-lg font-semibold text-navy">Behavior follow-up</h3><div className="mt-4 space-y-3">{(['D7','D14','D30'] as const).map(k=>{const x=follow[k];return <div key={k} className="rounded-xl bg-slate-50 p-4"><div className="flex items-center justify-between"><div className="font-semibold">{k}</div><div className="text-sm font-bold text-navy">{pct(x?.averageProgressPct)}</div></div><div className="mt-2 text-xs text-slate-500">{x?.completed||0}/{feed.population.participants} completed · On track {x?.statuses.ON_TRACK||0} · Perlu dorongan {x?.statuses.PERLU_DORONGAN||0} · Intervensi {x?.statuses.PERLU_INTERVENSI||0}</div></div>})}</div></section>
+   </div>
+   <section className="rounded-2xl border border-slate-200 bg-white p-5"><div className="flex flex-wrap items-center justify-between gap-3"><div><h3 className="text-lg font-semibold text-navy">Impact metrics D+30</h3><p className="mt-1 text-sm text-slate-500">Arah membaik mengikuti workbook: Naik atau Turun sesuai metric.</p></div><div className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">{feed.level3.plansCreated}/{feed.population.participants} plan dibuat</div></div><div className="mt-4 overflow-x-auto"><table className="min-w-full text-sm"><thead><tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wider text-slate-400"><th className="py-2 pr-4">Metric</th><th className="py-2 pr-4">Direction</th><th className="py-2 pr-4">Pairs</th><th className="py-2 pr-4">Improved</th><th className="py-2">Avg change</th></tr></thead><tbody>{feed.level4.byMetric.map(m=><tr key={m.code} className="border-b border-slate-100"><td className="py-3 pr-4 font-medium text-slate-800">{m.name}</td><td className="py-3 pr-4 text-slate-500">{m.direction==='UP_IS_BETTER'?'Naik':'Turun'}</td><td className="py-3 pr-4">{m.completed}</td><td className="py-3 pr-4">{m.improved}</td><td className="py-3">{m.averagePercentChange===null?'—':m.averagePercentChange.toFixed(1)+'%'}</td></tr>)}</tbody></table></div></section>
+   {error&&<div className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</div>}
+ </div>
+}
