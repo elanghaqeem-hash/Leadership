@@ -127,7 +127,7 @@ async function main() {
     if (password.length < 12) throw new Error('BOOTSTRAP_ADMIN_PASSWORD minimal 12 karakter');
     const salt = crypto.randomBytes(16);
     const derived = crypto.pbkdf2Sync(password, salt, 600_000, 32, 'sha256');
-    const passwordHash = 'pbkdf2-sha256$600000
+    const passwordHash = ['pbkdf2-sha256', '600000', salt.toString('base64url'), derived.toString('base64url')].join(String.fromCharCode(36));
     await prisma.user.upsert({
       where:{email},
       create:{email,name:process.env.BOOTSTRAP_ADMIN_NAME||'Platform Administrator',platformRole:'SUPER_ADMIN',passwordHash,emailVerifiedAt:new Date()},
