@@ -18,25 +18,3 @@ try {
 } finally {
   await prisma.$disconnect();
 }
- + salt.toString('base64url') + '
-  const user = await prisma.user.create({
-    data: { email, name: 'CI Auth Smoke User', passwordHash, isActive: true, emailVerifiedAt: new Date() },
-  });
-  console.log(`::add-mask::${password}`);
-  console.log(`AUTH_SMOKE_USER_ID=${user.id}`);
-  console.log(`AUTH_SMOKE_EMAIL=${email}`);
-  console.log(`AUTH_SMOKE_PASSWORD=${password}`);
-} finally {
-  await prisma.$disconnect();
-}
- + derived.toString('base64url');
-  const user = await prisma.user.create({
-    data: { email, name: 'CI Auth Smoke User', passwordHash, isActive: true, emailVerifiedAt: new Date() },
-  });
-  console.log(`::add-mask::${password}`);
-  console.log(`AUTH_SMOKE_USER_ID=${user.id}`);
-  console.log(`AUTH_SMOKE_EMAIL=${email}`);
-  console.log(`AUTH_SMOKE_PASSWORD=${password}`);
-} finally {
-  await prisma.$disconnect();
-}
