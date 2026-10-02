@@ -18,6 +18,7 @@ export default function BoardroomParticipant({activityId}:{activityId:string}){
  useActivityRealtime(activityId,load,4000);
  if(!feed)return <div className="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">{error||'Menunggu Boardroom…'}</div>;
  if(!feed.round||!feed.case)return <div className="mt-4 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">Trainer belum memulai 60-Second Boardroom.</div>;
+ const remaining=feed.round.phase==='STOPPED'?Math.max(0,Number(feed.round.remainingAtStop??feed.round.remainingSec)):Math.max(0,feed.timerSec-Math.floor((now-new Date(feed.round.startedAt).getTime())/1000));
  return <div className="mt-4 space-y-4">
    <div className="rounded-2xl bg-slate-950 p-5 text-white shadow-lg">
      <div className="flex items-center justify-between gap-4"><div><div className="text-xs font-bold uppercase tracking-[.18em] text-amber-300">60-Second Boardroom</div><div className="mt-1 text-lg font-semibold">{feed.case.label}</div></div><div className={`font-mono text-4xl font-bold ${remaining<=10?'text-red-300':'text-white'}`}>{mmss(remaining)}</div></div>
