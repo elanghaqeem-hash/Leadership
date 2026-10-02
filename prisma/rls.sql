@@ -19,7 +19,7 @@ DECLARE t text;
 BEGIN
   FOREACH t IN ARRAY ARRAY[
     'Tenant','TenantMembership','Batch','Team','Session','Activity','Submission',
-    'ThirtyDayPlan','ImpactMetric','EvaluationL1','AuditLog','ParticipantImportJob'
+    'ThirtyDayPlan','ImpactMetric','EvaluationL1','AuditLog','ParticipantImportJob','AttendanceRecord'
   ]
   LOOP
     EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', t);
