@@ -24,11 +24,15 @@ function MinuteAudit({activity,save,onSaved}:Props){
  const old=activity.submission?.payload?.items||[];
  const[items,setItems]=useState<Item[]>(old.length?old.map((x:any)=>({...x,id:crypto.randomUUID()})):[{id:crypto.randomUUID(),activity:'',durationMin:30,category:'Focus'}]);
  const total=items.reduce((s,x)=>s+(Number(x.durationMin)||0),0);
- return <Frame submit={async()=>{await save({items:items.map(({id,...x})=>x)});onSaved()}}>
+ const challengeMode=activity.config?.mode==='DAY1';
+ const byCategory=Object.fromEntries(categories.map(k=>[k,items.filter(x=>x.category===k).reduce((s,x)=>s+(Number(x.durationMin)||0),0)]));
+ return <Frame submit={async()=>{if(challengeMode&&total!==480)throw new Error('G2 480-Minute Challenge harus tepat 480 menit');await save({items:items.map(({id,...x})=>x)});onSaved()}}>
    <div className="rounded-xl bg-slate-50 p-3">
      <div className="flex items-center justify-between gap-3"><span className="text-sm font-semibold">Total waktu</span><span className={`font-mono text-lg font-bold ${total>480?'text-red-600':'text-navy'}`}>{total}/480 menit</span></div>
      <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200"><div className={`h-full ${total>480?'bg-red-500':'bg-teal'}`} style={{width:`${Math.min(100,total/480*100)}%`}}/></div>
    </div>
+   {challengeMode&&<div className={`rounded-xl p-3 text-sm ${total===480?'bg-emerald-50 text-emerald-900':'bg-amber-50 text-amber-900'}`}><b>Challenge mode:</b> alokasikan tepat 480 menit. {total===480?'Siap dikirim.':total<480?`Masih ${480-total} menit belum dialokasikan.`:`Kelebihan ${total-480} menit.`}</div>}
+   <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{categories.map(k=><div key={k} className="rounded-xl border border-slate-200 bg-white p-2 text-xs"><div className="font-semibold text-slate-500">{k}</div><div className="mt-1 text-base font-bold text-navy">{byCategory[k]||0} min</div></div>)}</div>
    {items.map((x,i)=><div key={x.id} className="rounded-xl border border-slate-200 p-3">
      <div className="flex items-center justify-between"><span className="text-sm font-semibold">Aktivitas {i+1}</span>{items.length>1&&<button type="button" onClick={()=>setItems(items.filter(y=>y.id!==x.id))} className="text-xs font-semibold text-red-600">Hapus</button>}</div>
      <input required value={x.activity} onChange={e=>setItems(items.map(y=>y.id===x.id?{...y,activity:e.target.value}:y))} placeholder="Contoh: Meeting cabang" className={"mt-2 "+cls}/>
