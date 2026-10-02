@@ -16,7 +16,7 @@ const createSchema = z.object({
 export async function GET(_req:Request,{params}:{params:Promise<{batchId:string}>}){
   try{
     const {batchId}=await params;
-    const batch=await prisma.batch.findUnique({where:{id:batchId},select:{id:true,tenantId:true}});
+    const batch=await prisma.batch.findUnique({where:{id:batchId},select:{id:true,tenantId:true,code:true,name:true}});
     if(!batch)return NextResponse.json({error:'Batch tidak ditemukan'},{status:404});
     await assertPermission('BATCH_MANAGE',{tenantId:batch.tenantId,batchId});
     const staff=await prisma.batchMembership.findMany({
@@ -32,7 +32,7 @@ export async function POST(req:Request,{params}:{params:Promise<{batchId:string}
   try{
     const {batchId}=await params;
     const input=createSchema.parse(await req.json());
-    const batch=await prisma.batch.findUnique({where:{id:batchId},select:{id:true,tenantId:true}});
+    const batch=await prisma.batch.findUnique({where:{id:batchId},select:{id:true,tenantId:true,code:true,name:true}});
     if(!batch)return NextResponse.json({error:'Batch tidak ditemukan'},{status:404});
     const actor=await assertPermission('BATCH_MANAGE',{tenantId:batch.tenantId,batchId});
     let activationLink:string|undefined;
@@ -87,7 +87,7 @@ export async function POST(req:Request,{params}:{params:Promise<{batchId:string}
         recipient:{userId:staff.user.id,name:staff.user.name,email:staff.user.email,role:staff.role},
         link:activationLink,
         expiresAt:activationExpiresAt.toISOString(),
-        batch:{id:batchId,code:'',name:''},
+        batch:{id:batchId,code:batch.code,name:batch.name},
       });
     }
     return NextResponse.json({staff, ...(process.env.NODE_ENV!=='production'&&activationLink?{devActivationLink:activationLink}:{})},{status:201});
