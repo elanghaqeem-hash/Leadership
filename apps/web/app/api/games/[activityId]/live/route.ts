@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { Prisma } from '@prisma/client';
+import { Prisma, type PrismaClient } from '@prisma/client';
 import { z } from 'zod';
-import { prisma } from '@ltw/db';
+import { prisma, withRequestPrisma } from '@ltw/db';
 import { assertPermission, requireUser } from '@/lib/auth';
 import { HttpError, jsonError } from '@/lib/http';
 import { publishBatchEvent } from '@/lib/realtime';
@@ -33,8 +33,8 @@ function allowedChoices(type: string, content?: { payload: Prisma.JsonValue }) {
   return [];
 }
 
-async function loadGame(activityId: string) {
-  const activity = await prisma.activity.findUnique({
+async function loadGame(activityId: string, db: PrismaClient = prisma) {
+  const activity = await db.activity.findUnique({
     where: { id: activityId },
     select: {
       id:true,tenantId:true,batchId:true,type:true,title:true,status:true,config:true,
@@ -45,7 +45,7 @@ async function loadGame(activityId: string) {
   const cfg = activity.config as { gameContentCode?: unknown };
   const code = typeof cfg?.gameContentCode === 'string' ? cfg.gameContentCode : null;
   if (!code) throw new HttpError('Konten live game belum dikonfigurasi', 409);
-  const content = await prisma.contentItem.findFirst({
+  const content = await db.contentItem.findFirst({
     where: { code, isPublished:true, OR:[{tenantId:null},{tenantId:activity.tenantId}] },
     orderBy: { version:'desc' },
     select: { code:true,title:true,payload:true,answerKey:true,version:true },
@@ -69,9 +69,9 @@ function stateOf(value: Prisma.JsonValue): RoundState {
   return value as unknown as RoundState;
 }
 
-async function aggregateVotes(activityId: string, roundNo: number, stage: string) {
+async function aggregateVotes(activityId: string, roundNo: number, stage: string, db: PrismaClient = prisma) {
   const prefix = `game:${activityId}:${roundNo}:${stage}:`;
-  const submissions = await prisma.submission.findMany({
+  const submissions = await db.submission.findMany({
     where: { activityId, submissionKey:{startsWith:prefix} },
     select: { payload:true },
   });
@@ -158,49 +158,85 @@ export async function GET(_req: Request, { params }: { params: Promise<{ activit
 }
 
 export async function POST(req: Request, { params }: { params: Promise<{ activityId: string }> }) {
-  try {
-    const { activityId } = await params;
-    const { choice } = voteSchema.parse(await req.json());
-    const { activity, content } = await loadGame(activityId);
-    if (activity.status !== 'OPEN') throw new HttpError('Game belum dibuka atau sudah dikunci', 409);
+  return withRequestPrisma(async (db) => {
+    try {
+      const { activityId } = await params;
+      const { choice } = voteSchema.parse(await req.json());
+      const { activity, content } = await loadGame(activityId, db);
+      if (activity.status !== 'OPEN') throw new HttpError('Game belum dibuka atau sudah dikunci', 409);
 
-    const user = await requireUser();
-    await assertPermission('OWN_SUBMISSION_WRITE', {
-      tenantId:activity.tenantId,batchId:activity.batchId,resourceUserId:user.id,
-    });
-    const membership = await prisma.batchMembership.findUnique({
-      where:{batchId_userId:{batchId:activity.batchId,userId:user.id}},
-      select:{role:true,teamId:true,isActive:true},
-    });
-    if (!membership?.isActive || membership.role !== 'PARTICIPANT') throw new HttpError('Hanya participant aktif yang dapat voting', 403);
+      const user = await requireUser(db);
+      await assertPermission(
+        'OWN_SUBMISSION_WRITE',
+        {
+          tenantId: activity.tenantId,
+          batchId: activity.batchId,
+          resourceUserId: user.id,
+        },
+        db,
+      );
 
-    const round = await prisma.gameRound.findFirst({where:{activityId,teamId:null},orderBy:{roundNo:'desc'}});
-    if (!round) throw new HttpError('Round belum dimulai trainer', 409);
-    const state = stateOf(round.state);
-    if (state.phase !== 'VOTING') throw new HttpError('Voting round sudah ditutup/reveal', 409);
+      const membership = await db.batchMembership.findUnique({
+        where: { batchId_userId: { batchId: activity.batchId, userId: user.id } },
+        select: { role: true, teamId: true, isActive: true },
+      });
+      if (!membership?.isActive || membership.role !== 'PARTICIPANT') {
+        throw new HttpError('Hanya participant aktif yang dapat voting', 403);
+      }
 
-    const choices = allowedChoices(activity.type, content);
-    const normalizedChoice = choices.find((item) => item.toLowerCase() === choice.toLowerCase());
-    if (!normalizedChoice) throw new HttpError('Pilihan vote tidak valid', 400);
-    const submissionKey = `game:${activityId}:${round.roundNo}:${state.stage}:${user.id}`;
-    const payload = { game:true, roundNo:round.roundNo, stage:state.stage, choice:normalizedChoice };
+      const round = await db.gameRound.findFirst({
+        where: { activityId, teamId: null },
+        orderBy: { roundNo: 'desc' },
+      });
+      if (!round) throw new HttpError('Round belum dimulai trainer', 409);
 
-    await prisma.submission.upsert({
-      where:{submissionKey},
-      create:{
-        tenantId:activity.tenantId,batchId:activity.batchId,activityId,
-        ownerType:'USER',userId:user.id,teamId:membership.teamId,submissionKey,
-        payload:payload as Prisma.InputJsonValue,submittedAt:new Date(),
-      },
-      update:{payload:payload as Prisma.InputJsonValue,submittedAt:new Date(),version:{increment:1}},
-    });
+      const state = stateOf(round.state);
+      if (state.phase !== 'VOTING') throw new HttpError('Voting round sudah ditutup/reveal', 409);
 
-    const aggregate = await aggregateVotes(activityId,round.roundNo,state.stage);
-    publishBatchEvent(activity.batchId, 'GAME_STATE', activity.id);
-  return NextResponse.json({ok:true,choice:normalizedChoice,totalVotes:aggregate.totalVotes});
-  } catch (e) {
-    return jsonError(e);
-  }
+      const choices = allowedChoices(activity.type, content);
+      const normalizedChoice = choices.find((item) => item.toLowerCase() === choice.toLowerCase());
+      if (!normalizedChoice) throw new HttpError('Pilihan vote tidak valid', 400);
+
+      const submissionKey = `game:${activityId}:${round.roundNo}:${state.stage}:${user.id}`;
+      const payload = {
+        game: true,
+        roundNo: round.roundNo,
+        stage: state.stage,
+        choice: normalizedChoice,
+      };
+
+      await db.submission.upsert({
+        where: { submissionKey },
+        create: {
+          tenantId: activity.tenantId,
+          batchId: activity.batchId,
+          activityId,
+          ownerType: 'USER',
+          userId: user.id,
+          teamId: membership.teamId,
+          submissionKey,
+          payload: payload as Prisma.InputJsonValue,
+          submittedAt: new Date(),
+        },
+        update: {
+          payload: payload as Prisma.InputJsonValue,
+          submittedAt: new Date(),
+          version: { increment: 1 },
+        },
+      });
+
+      const aggregate = await aggregateVotes(activityId, round.roundNo, state.stage, db);
+      publishBatchEvent(activity.batchId, 'GAME_STATE', activity.id);
+
+      return NextResponse.json({
+        ok: true,
+        choice: normalizedChoice,
+        totalVotes: aggregate.totalVotes,
+      });
+    } catch (e) {
+      return jsonError(e);
+    }
+  }).catch((e) => jsonError(e));
 }
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ activityId: string }> }) {
