@@ -21,6 +21,7 @@ export async function POST(req:Request){
   }
 
   const{start,end}=utcDayRange();
+  const cleanup=await prisma.rateLimitBucket.deleteMany({where:{expiresAt:{lt:new Date()}}});
   const plans=await prisma.thirtyDayPlan.findMany({
     where:{
       status:{in:['ACTIVE','COMPLETED']},
@@ -88,5 +89,6 @@ export async function POST(req:Request){
     date:start.toISOString().slice(0,10),
     plansChecked:plans.length,
     deliveries:results,
+    rateLimitBucketsDeleted:cleanup.count,
   });
 }
