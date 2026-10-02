@@ -1,7 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import argon2 from 'argon2';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -126,7 +125,9 @@ async function main() {
   const password = process.env.BOOTSTRAP_ADMIN_PASSWORD;
   if (email && password) {
     if (password.length < 12) throw new Error('BOOTSTRAP_ADMIN_PASSWORD minimal 12 karakter');
-    const passwordHash = await argon2.hash(password, { type: argon2.argon2id });
+    const salt = crypto.randomBytes(16);
+    const derived = crypto.pbkdf2Sync(password, salt, 600_000, 32, 'sha256');
+    const passwordHash = `pbkdf2-sha256$600000${salt.toString('base64url')}${derived.toString('base64url')}`;
     await prisma.user.upsert({
       where:{email},
       create:{email,name:process.env.BOOTSTRAP_ADMIN_NAME||'Platform Administrator',platformRole:'SUPER_ADMIN',passwordHash,emailVerifiedAt:new Date()},
