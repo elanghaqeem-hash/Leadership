@@ -113,9 +113,14 @@ try {
     });
   }
 
-  // Warm application and database connection pools before measuring concurrent voting.
+  // Warm application, auth, route module, and database pools before measuring concurrent voting.
   const warm = await fetch(base+'/api/health');
   if (!warm.ok) throw new Error('Application health check failed before load test');
+  const routeWarm = await fetch(base+'/api/games/'+activity.id+'/live', {
+    headers: { cookie: clients[0].cookie },
+  });
+  if (!routeWarm.ok) throw new Error('Live game route warm-up failed: '+routeWarm.status+' '+await routeWarm.text());
+  await routeWarm.arrayBuffer();
 
   const results = await Promise.all(clients.map(async (client) => {
     const started = performance.now();
