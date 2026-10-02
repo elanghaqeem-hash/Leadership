@@ -54,6 +54,13 @@ enum BatchStatus {
   ARCHIVED
 }
 
+enum AttendanceStatus {
+  PRESENT
+  LATE
+  ABSENT
+  EXCUSED
+}
+
 enum ActivityStatus {
   DRAFT
   OPEN
@@ -168,6 +175,8 @@ model User {
   mfaCredential   MfaCredential?
   mfaChallenges   MfaChallenge[]
   consents        ConsentRecord[]
+  attendanceRecords AttendanceRecord[] @relation("AttendanceParticipant")
+  attendanceMarked AttendanceRecord[] @relation("AttendanceMarker")
   importJobs      ParticipantImportJob[] @relation("ImportCreatedBy")
 }
 
@@ -195,6 +204,7 @@ model Tenant {
   auditLogs       AuditLog[]
   participantImportJobs ParticipantImportJob[]
   consents        ConsentRecord[]
+  attendanceRecords AttendanceRecord[]
 }
 
 model TenantMembership {
@@ -213,6 +223,27 @@ model TenantMembership {
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@unique([tenantId, userId])
   @@index([userId, role])
+}
+
+model AttendanceRecord {
+  id          String           @id @default(uuid()) @db.Uuid
+  tenantId    String           @db.Uuid
+  batchId     String           @db.Uuid
+  userId      String           @db.Uuid
+  day         Int
+  status      AttendanceStatus @default(PRESENT)
+  checkedInAt DateTime?
+  note        String?
+  markedById  String?          @db.Uuid
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  tenant      Tenant           @relation(fields:[tenantId],references:[id],onDelete:Cascade)
+  batch       Batch            @relation(fields:[batchId],references:[id],onDelete:Cascade)
+  user        User             @relation("AttendanceParticipant",fields:[userId],references:[id],onDelete:Cascade)
+  markedBy    User?            @relation("AttendanceMarker",fields:[markedById],references:[id],onDelete:SetNull)
+  @@unique([batchId,userId,day])
+  @@index([tenantId,batchId,day,status])
+  @@index([userId,batchId])
 }
 
 model Program {
@@ -273,6 +304,7 @@ model Batch {
   memberships      BatchMembership[]
   managerLinks     ParticipantManagerLink[]
   observerAssignments ObserverTeamAssignment[]
+  attendanceRecords AttendanceRecord[]
   teams            Team[]
   sessions         Session[]
   activities       Activity[]
