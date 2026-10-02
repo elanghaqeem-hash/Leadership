@@ -11,6 +11,12 @@ function fromBase64Url(value: string): Uint8Array {
   return new Uint8Array(Buffer.from(value, 'base64url'));
 }
 
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  return copy.buffer;
+}
+
 async function derive(password: string, salt: Uint8Array, iterations: number): Promise<Uint8Array> {
   const material = await globalThis.crypto.subtle.importKey(
     'raw',
@@ -20,7 +26,7 @@ async function derive(password: string, salt: Uint8Array, iterations: number): P
     ['deriveBits'],
   );
   const bits = await globalThis.crypto.subtle.deriveBits(
-    { name: 'PBKDF2', hash: 'SHA-256', salt, iterations },
+    { name: 'PBKDF2', hash: 'SHA-256', salt: toArrayBuffer(salt), iterations },
     material,
     KEY_BYTES * 8,
   );
