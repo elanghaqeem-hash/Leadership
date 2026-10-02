@@ -56,8 +56,8 @@ export async function GET(_req:Request,{params}:{params:Promise<{batchId:string}
     const workbook=new ExcelJS.Workbook();
     workbook.creator='Leadership That Works';
     workbook.created=new Date();
-    workbook.properties.title='Training Impact Report - '+batch.name;
-    workbook.properties.subject='Aggregate training impact report';
+    workbook.title='Training Impact Report - '+batch.name;
+    workbook.subject='Aggregate training impact report';
 
     const summary=workbook.addWorksheet('Executive Summary',{views:[{state:'frozen',ySplit:1}]});
     summary.columns=[{header:'Metric',key:'metric',width:34},{header:'Value',key:'value',width:24},{header:'Note',key:'note',width:52}];
