@@ -30,7 +30,7 @@
     "test:classroom:load": "node scripts/classroom-load-smoke.mjs",
     "test:reports:http": "node scripts/report-export-smoke.mjs",
     "test:classroom:games": "node scripts/classroom-game-load-smoke.mjs",
-    "cf:build": "npm run db:generate && cd apps/web && npx --yes @opennextjs/cloudflare@1.20.7 build"
+    "cf:build": "npm run db:generate && cd apps/web && npx --yes @opennextjs/cloudflare@1.20.7 build --config ../../wrangler.jsonc"
   },
   "dependencies": {
     "@prisma/client": "6.12.0",
