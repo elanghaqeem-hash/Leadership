@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma=new PrismaClient();
 const base=process.env.APP_URL||'http://127.0.0.1:3000';
 const participants=30;
-const thresholdMs=Number(process.env.CLASSROOM_GAME_P95_THRESHOLD_MS||2500);
+const thresholdMs=Number(process.env.CLASSROOM_GAME_P95_THRESHOLD_MS||1000);
 const suffix=crypto.randomUUID().slice(0,8);
 const userIds=[];
 let tenantId;
