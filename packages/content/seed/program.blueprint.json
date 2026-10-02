@@ -473,7 +473,9 @@
           "type": "THIRTY_DAY_PLAN",
           "title": "30-Day Plan",
           "config": {
-            "targets": 3
+            "targets": 3,
+            "contentCode": "IMPACT_METRICS_V1",
+            "followUpContentCode": "MANAGER_FOLLOWUP_V1"
           },
           "initialStatus": "DRAFT"
         }
