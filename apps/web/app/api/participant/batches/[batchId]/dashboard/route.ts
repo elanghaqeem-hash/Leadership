@@ -94,7 +94,7 @@ export async function GET(_req:Request,{params}:{params:Promise<{batchId:string}
         where:{batchId,userId:user.id,ownerType:'USER',submittedAt:{not:null}},
         select:{activityId:true},
       }),
-      prisma.activity.count({where:{batchId,ownerType:'USER'} as any}).catch(()=>0),
+      prisma.activity.count({where:{batchId,type:{notIn:gameTypes as any}}}),
     ]);
 
     const planData=plan?{
