@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { prisma } from '@ltw/db';
 import { assertPermission, hashToken } from '@/lib/auth';
 import { HttpError, jsonError } from '@/lib/http';
+import { sendAccountNotification } from '@/lib/notifications';
 
 const roleSchema = z.enum(['LEAD_TRAINER','CO_FACILITATOR','SPONSOR_VIEWER']);
 const createSchema = z.object({
@@ -35,6 +36,7 @@ export async function POST(req:Request,{params}:{params:Promise<{batchId:string}
     if(!batch)return NextResponse.json({error:'Batch tidak ditemukan'},{status:404});
     const actor=await assertPermission('BATCH_MANAGE',{tenantId:batch.tenantId,batchId});
     let activationLink:string|undefined;
+    let activationExpiresAt:Date|undefined;
 
     const staff=await prisma.$transaction(async(tx)=>{
       let user=await tx.user.findUnique({where:{email:input.email}});
@@ -61,12 +63,11 @@ export async function POST(req:Request,{params}:{params:Promise<{batchId:string}
       if(!user.passwordHash || !user.emailVerifiedAt){
         await tx.magicLinkToken.deleteMany({where:{userId:user.id,purpose:'ACCOUNT_ACTIVATION',consumedAt:null}});
         const token=randomBytes(32).toString('base64url');
+        activationExpiresAt=new Date(Date.now()+24*60*60*1000);
         await tx.magicLinkToken.create({
-          data:{userId:user.id,purpose:'ACCOUNT_ACTIVATION',tokenHash:hashToken(token),expiresAt:new Date(Date.now()+24*60*60*1000)},
+          data:{userId:user.id,purpose:'ACCOUNT_ACTIVATION',tokenHash:hashToken(token),expiresAt:activationExpiresAt},
         });
-        if(process.env.NODE_ENV!=='production'){
-          activationLink=`${process.env.APP_URL||'http://localhost:3000'}/activate?token=${encodeURIComponent(token)}`;
-        }
+        activationLink=`${process.env.APP_URL||'http://localhost:3000'}/activate?token=${encodeURIComponent(token)}`;
       }
 
       await tx.auditLog.create({
@@ -80,6 +81,15 @@ export async function POST(req:Request,{params}:{params:Promise<{batchId:string}
       return membership;
     });
 
-    return NextResponse.json({staff, ...(activationLink?{devActivationLink:activationLink}:{})},{status:201});
+    if(activationLink&&activationExpiresAt){
+      await sendAccountNotification({
+        event:'ACCOUNT_ACTIVATION',
+        recipient:{userId:staff.user.id,name:staff.user.name,email:staff.user.email,role:staff.role},
+        link:activationLink,
+        expiresAt:activationExpiresAt.toISOString(),
+        batch:{id:batchId,code:'',name:''},
+      });
+    }
+    return NextResponse.json({staff, ...(process.env.NODE_ENV!=='production'&&activationLink?{devActivationLink:activationLink}:{})},{status:201});
   }catch(e){return jsonError(e)}
 }
