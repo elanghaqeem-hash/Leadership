@@ -3,6 +3,7 @@ import { Prisma, type PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { prisma, withRequestPrisma } from '@ltw/db';
 import { assertPermission, requireUser } from '@/lib/auth';
+import { can } from '@ltw/authz';
 import { HttpError, jsonError } from '@/lib/http';
 import { publishBatchEvent } from '@/lib/realtime';
 
@@ -166,22 +167,22 @@ export async function POST(req: Request, { params }: { params: Promise<{ activit
       if (activity.status !== 'OPEN') throw new HttpError('Game belum dibuka atau sudah dikunci', 409);
 
       const user = await requireUser(db);
-      await assertPermission(
-        'OWN_SUBMISSION_WRITE',
-        {
-          tenantId: activity.tenantId,
-          batchId: activity.batchId,
-          resourceUserId: user.id,
-        },
-        db,
-      );
-
       const membership = await db.batchMembership.findUnique({
         where: { batchId_userId: { batchId: activity.batchId, userId: user.id } },
         select: { role: true, teamId: true, isActive: true },
       });
       if (!membership?.isActive || membership.role !== 'PARTICIPANT') {
         throw new HttpError('Hanya participant aktif yang dapat voting', 403);
+      }
+      if (!can('OWN_SUBMISSION_WRITE', {
+        role: 'PARTICIPANT',
+        actorTenantId: activity.tenantId,
+        resourceTenantId: activity.tenantId,
+        actorBatchId: activity.batchId,
+        resourceBatchId: activity.batchId,
+        isOwner: true,
+      })) {
+        throw new HttpError('Forbidden', 403);
       }
 
       const round = await db.gameRound.findFirst({
@@ -225,13 +226,16 @@ export async function POST(req: Request, { params }: { params: Promise<{ activit
         },
       });
 
-      const aggregate = await aggregateVotes(activityId, round.roundNo, state.stage, db);
+      const votePrefix = `game:${activityId}:${round.roundNo}:${state.stage}:`;
+      const totalVotes = await db.submission.count({
+        where: { activityId, submissionKey: { startsWith: votePrefix } },
+      });
       publishBatchEvent(activity.batchId, 'GAME_STATE', activity.id);
 
       return NextResponse.json({
         ok: true,
         choice: normalizedChoice,
-        totalVotes: aggregate.totalVotes,
+        totalVotes,
       });
     } catch (e) {
       return jsonError(e);
