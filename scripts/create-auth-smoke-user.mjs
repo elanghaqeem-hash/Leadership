@@ -7,7 +7,7 @@ try {
   const password = crypto.randomBytes(24).toString('base64url');
   const salt = crypto.randomBytes(16);
   const derived = crypto.pbkdf2Sync(password, salt, 600_000, 32, 'sha256');
-  const passwordHash = 'pbkdf2-sha256$600000
+  const passwordHash = ['pbkdf2-sha256', '600000', salt.toString('base64url'), derived.toString('base64url')].join(String.fromCharCode(36));
   const user = await prisma.user.create({
     data: { email, name: 'CI Auth Smoke User', passwordHash, isActive: true, emailVerifiedAt: new Date() },
   });
