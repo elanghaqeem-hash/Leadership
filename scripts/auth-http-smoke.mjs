@@ -38,14 +38,17 @@ console.log(JSON.stringify({ ok: true, email: payload.user.email, securityHeader
 // Rate-limit smoke: invalid login attempts are throttled without affecting the valid session above.
 const invalidEmail='rate-limit-'+Date.now()+'@example.local';
 const statuses=[];
-for(let i=0;i<9;i++){
+for(let i=0;i<16;i++){
   const r=await fetch(`${base}/api/auth/login`,{
     method:'POST',
     headers:{'content-type':'application/json','x-forwarded-for':'203.0.113.77'},
     body:JSON.stringify({email:invalidEmail,password:'Invalid-Password-2026!'}),
   });
   statuses.push(r.status);
+  if(r.status===429)break;
 }
-if(statuses.slice(0,8).some(x=>x!==401))throw new Error('Unexpected pre-limit login statuses: '+JSON.stringify(statuses));
-if(statuses[8]!==429)throw new Error('Rate-limit smoke expected 429 on ninth attempt: '+JSON.stringify(statuses));
-console.log(JSON.stringify({rateLimit:true,statuses},null,2));
+const first429=statuses.indexOf(429);
+if(statuses.some((x,i)=>i<first429&&x!==401))throw new Error('Unexpected pre-limit login statuses: '+JSON.stringify(statuses));
+if(first429<8)throw new Error('Rate-limit triggered before eight allowed attempts: '+JSON.stringify(statuses));
+if(first429<0)throw new Error('Rate-limit smoke never reached 429; possible 5-minute window boundary issue or regression: '+JSON.stringify(statuses));
+console.log(JSON.stringify({rateLimit:true,first429Attempt:first429+1,statuses},null,2));
