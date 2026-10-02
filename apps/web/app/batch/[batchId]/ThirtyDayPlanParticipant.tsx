@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useActivityRealtime } from '@/hooks/useActivityRealtime';
+import D7SelfReview from './D7SelfReview';
 
 type Metric={code:string;name:string;unit:string;direction:'UP_IS_BETTER'|'DOWN_IS_BETTER'};
 type Target={behavior:string;successMeasure:string;evidence:string;firstAction:string;supportNeeded:string};
@@ -29,6 +30,7 @@ export default function ThirtyDayPlanParticipant({activityId}:{activityId:string
    <div className="rounded-2xl border border-slate-200 bg-white p-4"><div className="font-semibold text-navy">Impact Metrics — Baseline</div><p className="mt-1 text-xs leading-5 text-slate-500">Isi metrik yang tersedia datanya. Baseline 0 diperbolehkan; persentase perubahan akan ditandai tidak dapat dihitung jika baseline 0.</p><div className="mt-4 grid gap-3 sm:grid-cols-2">{feed.metrics.map(m=><label key={m.code} className="rounded-xl bg-slate-50 p-3 text-sm"><span className="font-medium">{m.name}</span><span className="ml-1 text-xs text-slate-500">({m.unit}; lebih baik {m.direction==='UP_IS_BETTER'?'naik':'turun'})</span><input disabled={feed.activity.status!=='OPEN'} type="number" step="any" value={baselines[m.code]||''} onChange={e=>setBaselines(v=>({...v,[m.code]:e.target.value}))} placeholder="Belum diisi" className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2"/></label>)}</div></div>
    <button disabled={busy||feed.activity.status!=='OPEN'||!valid} onClick={submit} className="w-full rounded-xl bg-navy px-4 py-3 font-semibold text-white disabled:opacity-40">{busy?'Menyimpan…':'Aktifkan 30-Day Plan'}</button>
    {feed.plan&&<div className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-900">Review: D+7 <b>{new Date(feed.plan.reviewD7).toLocaleDateString('id-ID')}</b> · D+14 <b>{new Date(feed.plan.reviewD14).toLocaleDateString('id-ID')}</b> · D+30 <b>{new Date(feed.plan.reviewD30).toLocaleDateString('id-ID')}</b></div>}
+   {feed.plan&&<D7SelfReview activityId={activityId}/>} 
    {msg&&<div className="rounded-xl bg-slate-50 p-3 text-sm text-slate-600">{msg}</div>}
  </div>
 }
