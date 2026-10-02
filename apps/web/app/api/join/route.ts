@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '@ltw/db';
 import { requireUser } from '@/lib/auth';
 import { jsonError } from '@/lib/http';
+import { consumeRateLimit, rateLimitHeaders, requestIp } from '@/lib/rate-limit';
 
 const schema=z.object({code:z.string().trim().regex(/^\d{6}$/)});
 
@@ -18,6 +19,8 @@ export async function POST(req:Request){
  try{
   const user=await requireUser();
   const {code}=schema.parse(await req.json());
+  const limit=await consumeRateLimit({scope:'CLASS_JOIN',identifier:user.id+'|'+requestIp(req),limit:20,windowMs:5*60_000});
+  if(!limit.allowed)return NextResponse.json({error:'Terlalu banyak percobaan kode kelas. Coba lagi nanti.'},{status:429,headers:rateLimitHeaders(limit)});
   const batch=await prisma.batch.findUnique({where:{joinCode:code},select:{id:true,tenantId:true,code:true,name:true,status:true}});
   if(!batch)return NextResponse.json({error:'Kode kelas tidak valid'},{status:404});
   const membership=await prisma.batchMembership.findUnique({
