@@ -8,6 +8,16 @@ type GameStanding={activityId:string;type:string;code:string;title:string;source
 const scoredTypes=['ARENA','WAR_ROOM','DETECTIVE_ROOM','DECISION_AUCTION','BOARDROOM'] as const;
 const trackedTypes=[...scoredTypes,'CALENDAR_TETRIS'] as const;
 
+type LeaderboardResult=NonNullable<Awaited<ReturnType<typeof buildTeamLeaderboardUncached>>>;
+type LeaderboardCacheEntry={expiresAt:number;promise:Promise<LeaderboardResult|null>};
+type LeaderboardCacheGlobal=typeof globalThis & {__ltwLeaderboardCache?:Map<string,LeaderboardCacheEntry>};
+
+function leaderboardCache(){
+  const g=globalThis as LeaderboardCacheGlobal;
+  if(!g.__ltwLeaderboardCache)g.__ltwLeaderboardCache=new Map();
+  return g.__ltwLeaderboardCache;
+}
+
 function competitionRanks(values:Array<number|null>){
   return values.map(v=>v===null?null:1+values.filter(x=>x!==null&&x>v).length);
 }
@@ -144,7 +154,7 @@ async function calendarStanding(activity:any,teams:Team[]):Promise<GameStanding>
   };
 }
 
-export async function buildTeamLeaderboard(batchId:string){
+async function buildTeamLeaderboardUncached(batchId:string){
   const [batch,teams,activities]=await Promise.all([
     prisma.batch.findUnique({where:{id:batchId},select:{id:true,tenantId:true,code:true,name:true}}),
     prisma.team.findMany({where:{batchId},orderBy:{number:'asc'},select:{id:true,name:true,number:true}}),
@@ -192,4 +202,21 @@ export async function buildTeamLeaderboard(batchId:string){
     games:standings,
     overall:rankedOverall,
   };
+}
+
+export async function buildTeamLeaderboard(batchId:string){
+  const cache=leaderboardCache();
+  const now=Date.now();
+  const existing=cache.get(batchId);
+  if(existing&&existing.expiresAt>now)return existing.promise;
+  const promise=buildTeamLeaderboardUncached(batchId).catch(error=>{
+    cache.delete(batchId);
+    throw error;
+  });
+  cache.set(batchId,{expiresAt:now+750,promise});
+  return promise;
+}
+
+export function invalidateTeamLeaderboard(batchId:string){
+  leaderboardCache().delete(batchId);
 }
