@@ -4,13 +4,14 @@ import { prisma } from '@ltw/db';
 import { parseParticipantCsv } from '@ltw/imports';
 import { assertPermission, hashToken } from '@/lib/auth';
 import { jsonError } from '@/lib/http';
+import { sendAccountNotification } from '@/lib/notifications';
 
 const MAX_CSV_BYTES=2*1024*1024;
 
 export async function POST(req:Request,{params}:{params:Promise<{batchId:string}>}){
  try{
   const {batchId}=await params;
-  const batch=await prisma.batch.findUnique({where:{id:batchId},select:{id:true,tenantId:true,status:true}});
+  const batch=await prisma.batch.findUnique({where:{id:batchId},select:{id:true,tenantId:true,status:true,code:true,name:true}});
   if(!batch)return NextResponse.json({error:'Batch tidak ditemukan'},{status:404});
   const actor=await assertPermission('BATCH_MANAGE',{tenantId:batch.tenantId,batchId});
   const form=await req.formData(); const file=form.get('file');
@@ -21,11 +22,13 @@ export async function POST(req:Request,{params}:{params:Promise<{batchId:string}
   const job=await prisma.participantImportJob.create({data:{tenantId:batch.tenantId,batchId,createdById:actor.id,fileName:file.name,status:'PROCESSING',totalRows:parsed.rows.length+parsed.errors.length,failedRows:parsed.errors.length,errors:parsed.errors}});
   const warnings:Array<{rowNumber:number;email?:string;message:string}>=[];
   const invitationLinks:Array<{rowNumber:number;email:string;link:string}>=[];
+  const managerActivationIssued=new Set<string>();
   let success=0;
   for(const row of parsed.rows){
    try{
-    const devInvitation=await prisma.$transaction(async tx=>{
+    const rowResult=await prisma.$transaction(async tx=>{
       let devInvitation: {rowNumber:number;email:string;link:string}|undefined;
+      const activations:Array<{userId:string;name:string;email:string;role:'PARTICIPANT'|'LINE_MANAGER';link:string;expiresAt:Date}>=[];
       let participant=await tx.user.findUnique({where:{email:row.email}});
       if(!participant)participant=await tx.user.create({data:{email:row.email,name:row.nama,emailVerifiedAt:null}});
       await tx.tenantMembership.upsert({
@@ -44,8 +47,11 @@ export async function POST(req:Request,{params}:{params:Promise<{batchId:string}
       if(!participant.passwordHash||!participant.emailVerifiedAt){
         await tx.magicLinkToken.deleteMany({where:{userId:participant.id,purpose:'ACCOUNT_ACTIVATION',consumedAt:null}});
         const activationToken=randomBytes(32).toString('base64url');
-        await tx.magicLinkToken.create({data:{userId:participant.id,purpose:'ACCOUNT_ACTIVATION',tokenHash:hashToken(activationToken),expiresAt:new Date(Date.now()+24*60*60*1000)}});
-        if(process.env.NODE_ENV!=='production') devInvitation={rowNumber:row.rowNumber,email:row.email,link:`${process.env.APP_URL||'http://localhost:3000'}/activate?token=${encodeURIComponent(activationToken)}`};
+        const expiresAt=new Date(Date.now()+24*60*60*1000);
+        await tx.magicLinkToken.create({data:{userId:participant.id,purpose:'ACCOUNT_ACTIVATION',tokenHash:hashToken(activationToken),expiresAt}});
+        const link=`${process.env.APP_URL||'http://localhost:3000'}/activate?token=${encodeURIComponent(activationToken)}`;
+        activations.push({userId:participant.id,name:participant.name,email:participant.email,role:'PARTICIPANT',link,expiresAt});
+        if(process.env.NODE_ENV!=='production') devInvitation={rowNumber:row.rowNumber,email:row.email,link};
       }
 
       if(row.managerEmail){
@@ -56,12 +62,33 @@ export async function POST(req:Request,{params}:{params:Promise<{batchId:string}
         if(existingManagerBatchRole&&existingManagerBatchRole.role!=='LINE_MANAGER') throw new Error(`Atasan ${row.managerEmail} sudah memiliki role ${existingManagerBatchRole.role} pada batch ini`);
         await tx.batchMembership.upsert({where:{batchId_userId:{batchId,userId:manager.id}},create:{batchId,userId:manager.id,role:'LINE_MANAGER'},update:{role:'LINE_MANAGER',isActive:true}});
         await tx.participantManagerLink.upsert({where:{batchId_participantUserId:{batchId,participantUserId:participant.id}},create:{batchId,participantUserId:participant.id,managerUserId:manager.id},update:{managerUserId:manager.id}});
+        if((!manager.passwordHash||!manager.emailVerifiedAt)&&!managerActivationIssued.has(manager.id)){
+          await tx.magicLinkToken.deleteMany({where:{userId:manager.id,purpose:'ACCOUNT_ACTIVATION',consumedAt:null}});
+          const activationToken=randomBytes(32).toString('base64url');
+          const expiresAt=new Date(Date.now()+24*60*60*1000);
+          await tx.magicLinkToken.create({data:{userId:manager.id,purpose:'ACCOUNT_ACTIVATION',tokenHash:hashToken(activationToken),expiresAt}});
+          const link=`${process.env.APP_URL||'http://localhost:3000'}/activate?token=${encodeURIComponent(activationToken)}`;
+          activations.push({userId:manager.id,name:manager.name,email:manager.email,role:'LINE_MANAGER',link,expiresAt});
+        }
       }else if(row.atasan){
         warnings.push({rowNumber:row.rowNumber,email:row.email,message:`Atasan "${row.atasan}" belum dipetakan karena atasan_email tidak tersedia.`});
       }
-      return devInvitation;
+      return {devInvitation,activations};
     });
-    if(devInvitation) invitationLinks.push(devInvitation);
+    if(rowResult.devInvitation) invitationLinks.push(rowResult.devInvitation);
+    for(const activation of rowResult.activations){
+      if(activation.role==='LINE_MANAGER')managerActivationIssued.add(activation.userId);
+      const deliveries=await sendAccountNotification({
+        event:'ACCOUNT_ACTIVATION',
+        recipient:{userId:activation.userId,name:activation.name,email:activation.email,role:activation.role},
+        link:activation.link,
+        expiresAt:activation.expiresAt.toISOString(),
+        batch:{id:batchId,code:batch.code,name:batch.name},
+      });
+      if(process.env.NOTIFICATION_WEBHOOK_URL&&deliveries.length&&deliveries.every(d=>!d.ok)){
+        warnings.push({rowNumber:row.rowNumber,email:activation.email,message:'Activation notification delivery failed.'});
+      }
+    }
     success++;
    }catch(error){parsed.errors.push({rowNumber:row.rowNumber,email:row.email,message:error instanceof Error?error.message:'Import row failed'});}
   }
