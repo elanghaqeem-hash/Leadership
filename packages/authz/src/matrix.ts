@@ -62,7 +62,7 @@ export function can(permission: Permission, ctx: AuthzContext): boolean {
   }
   if (ctx.role === 'CO_FACILITATOR' && permission === 'RUBRIC_SCORE' && !ctx.isAssignedTeam) return false;
   if (ctx.role === 'LINE_MANAGER' && (permission === 'SUBORDINATE_PLAN_READ' || permission === 'SUBORDINATE_FOLLOWUP_WRITE') && !ctx.isMappedSubordinate) return false;
-  if (ctx.role === 'PARTICIPANT' && (permission === 'PRIVATE_REFLECTION_READ' || permission === 'PRIVATE_REFLECTION_WRITE' || permission === 'OWN_SUBMISSION_WRITE') && !ctx.isOwner) return false;
+  if (ctx.role === 'PARTICIPANT' && (permission === 'PRIVATE_REFLECTION_READ' || permission === 'PRIVATE_REFLECTION_WRITE' || permission === 'OWN_SUBMISSION_WRITE' || permission === 'INDIVIDUAL_DASHBOARD_READ' || permission === 'EXPORT_INDIVIDUAL') && !ctx.isOwner) return false;
   if (ctx.role === 'SPONSOR_VIEWER' && (permission === 'AGGREGATE_DASHBOARD_READ' || permission === 'EXPORT_AGGREGATE') && (ctx.aggregateSize ?? 0) < 5) return false;
   return true;
 }
