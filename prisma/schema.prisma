@@ -733,3 +733,15 @@ model ParticipantImportJob {
   createdBy     User            @relation("ImportCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
   @@index([tenantId, batchId, createdAt])
 }
+
+
+model RateLimitBucket {
+  key         String   @id
+  scope       String
+  windowStart DateTime
+  expiresAt   DateTime
+  count       Int      @default(1)
+  updatedAt   DateTime @updatedAt
+  @@index([expiresAt])
+  @@index([scope, windowStart])
+}
