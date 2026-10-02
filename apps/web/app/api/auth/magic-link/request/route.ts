@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { prisma } from '@ltw/db';
 import { hashToken } from '@/lib/auth';
 import { jsonError } from '@/lib/http';
+import { sendAccountNotification } from '@/lib/notifications';
 
 const schema=z.object({email:z.string().email().transform(v=>v.toLowerCase())});
 export async function POST(req:Request){
@@ -14,10 +15,16 @@ export async function POST(req:Request){
   if(user&&user.isActive&&user.batchMemberships.length){
     const token=randomBytes(32).toString('base64url');
     const ttl=Number(process.env.MAGIC_LINK_TTL_MINUTES||20);
-    await prisma.magicLinkToken.create({data:{userId:user.id,purpose:'MANAGER_LOGIN',tokenHash:hashToken(token),expiresAt:new Date(Date.now()+ttl*60_000)}});
+    const expiresAt=new Date(Date.now()+ttl*60_000);
+    await prisma.magicLinkToken.create({data:{userId:user.id,purpose:'MANAGER_LOGIN',tokenHash:hashToken(token),expiresAt}});
     const base=process.env.APP_URL||'http://localhost:3000';
     const link=`${base}/api/auth/magic-link/consume?token=${encodeURIComponent(token)}`;
-    // Sprint 1 creates the secure token. Email/WhatsApp adapters are wired in Sprint 4.
+    await sendAccountNotification({
+      event:'MANAGER_MAGIC_LINK',
+      recipient:{userId:user.id,name:user.name,email:user.email,role:'LINE_MANAGER'},
+      link,
+      expiresAt:expiresAt.toISOString(),
+    });
     if(process.env.NODE_ENV!=='production') devMagicLink=link;
   }
   return NextResponse.json({ok:true,message:'Jika email terdaftar sebagai Line Manager, tautan login akan dikirim.',...(devMagicLink?{devMagicLink}:{})});
