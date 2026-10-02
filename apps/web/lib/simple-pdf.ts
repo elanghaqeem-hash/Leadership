@@ -20,15 +20,15 @@ function sanitize(value:string){
 }
 
 function pdfString(value:string){
-  return sanitize(value).replace(/\/g,'\\').replace(/(/g,'\(').replace(/)/g,'\)');
+  return sanitize(value).replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)');
 }
 
 function fmt(n:number){
-  return Number.isInteger(n)?String(n):n.toFixed(2).replace(/0+$/,'').replace(/.$/,'');
+  return Number.isInteger(n)?String(n):n.toFixed(2).replace(/0+$/,'').replace(/\.$/,'');
 }
 
 export function wrapPdfText(value:string,maxChars:number){
-  const words=sanitize(value).split(/s+/).filter(Boolean);
+  const words=sanitize(value).split(/\s+/).filter(Boolean);
   const lines:string[]=[];
   let line='';
   for(const word of words){
