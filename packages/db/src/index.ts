@@ -30,3 +30,19 @@ export async function withPlatformContext<T>(fn: (tx: Prisma.TransactionClient) 
   });
 }
 
+
+
+/**
+ * Cloudflare Workers must not reuse a pooled Prisma socket across requests.
+ * Use this helper for request-bound routes and disconnect before returning.
+ */
+export async function withRequestPrisma<T>(fn: (db: PrismaClient) => Promise<T>): Promise<T> {
+  const db = new PrismaClient({
+    log: process.env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error'],
+  });
+  try {
+    return await fn(db);
+  } finally {
+    await db.$disconnect().catch(() => undefined);
+  }
+}
