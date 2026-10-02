@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { Prisma } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { prisma } from '@ltw/db';
 
 export type RateLimitResult={
@@ -26,12 +26,12 @@ export async function consumeRateLimit(input:{
   limit:number;
   windowMs:number;
   now?:number;
-}):Promise<RateLimitResult>{
+}, db: PrismaClient = prisma):Promise<RateLimitResult>{
   const now=input.now??Date.now();
   const windowStart=Math.floor(now/input.windowMs)*input.windowMs;
   const resetAt=new Date(windowStart+input.windowMs);
   const key=hashedKey(input.scope,input.identifier,windowStart);
-  const rows=await prisma.$queryRaw<Array<{count:number}>>(Prisma.sql`
+  const rows=await db.$queryRaw<Array<{count:number}>>(Prisma.sql`
     INSERT INTO "RateLimitBucket" ("key","scope","windowStart","expiresAt","count","updatedAt")
     VALUES (
       ${key},
