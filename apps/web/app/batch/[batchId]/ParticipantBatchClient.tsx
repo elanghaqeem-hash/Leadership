@@ -31,6 +31,7 @@ type Activity = {
 };
 type Feed = {
   batch:{id:string;code:string;name:string;status:string;startDate:string;endDate:string};
+  currentUserId:string;
   membership:{role:string;teamId:string|null}|null;
   content:Record<string,{code:string;title:string;payload:any}>;
   activities:Activity[];
