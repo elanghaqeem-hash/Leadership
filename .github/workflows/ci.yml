@@ -85,6 +85,9 @@ jobs:
       - name: HTTP login/session smoke
         run: npm run test:auth:http
 
+      - name: Classroom 30-participant latency smoke
+        run: npm run test:classroom:load
+
       - name: Dependency audit gate
         run: npm audit --omit=dev --audit-level=high
 
