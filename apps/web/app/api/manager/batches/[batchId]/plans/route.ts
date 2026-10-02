@@ -12,6 +12,8 @@ const schema=z.object({
   kind:z.enum(['D14','D30']),
   answers:z.array(z.string().trim().min(1).max(2000)).length(5),
   progressPct:z.number().min(0).max(100),
+  sbiFeedback:z.string().trim().max(2000).optional().default(''),
+  baselineMetrics:z.record(z.string(),z.number().finite().nullable()).optional().default({}),
   day30Metrics:z.record(z.string(),z.number().finite().nullable()).optional().default({}),
 });
 
@@ -106,7 +108,7 @@ export async function POST(req:Request,{params}:{params:Promise<{batchId:string}
     if(!plan)throw new HttpError('Participant belum memiliki 30-Day Plan',409);
 
     const statusLabel=managerFollowUpStatus(input.progressPct);
-    const answers={questions:payload.questions,answers:input.answers};
+    const answers={questions:payload.questions,answers:input.answers,sbiFeedback:input.sbiFeedback};
 
     const result=await prisma.$transaction(async tx=>{
       const follow=await tx.followUp.upsert({
@@ -122,38 +124,49 @@ export async function POST(req:Request,{params}:{params:Promise<{batchId:string}
       });
 
       const updatedMetrics:any[]=[];
-      if(input.kind==='D30'){
-        const metricRows=await tx.impactMetric.findMany({
-          where:{batchId,participantUserId:input.participantUserId},
-        });
-        for(const metric of metricRows){
-          if(!(metric.code in input.day30Metrics))continue;
-          const value=input.day30Metrics[metric.code];
-          if(value===null){
-            const updated=await tx.impactMetric.update({where:{id:metric.id},data:{day30:null,percentChange:null,improved:null}});
-            updatedMetrics.push(updated);
-            continue;
-          }
-          let percentChange:number|null=null;
-          let improved:boolean|null=null;
-          if(metric.baseline!==null){
-            const scored=impactMetric(Number(metric.baseline),value,metric.direction);
-            percentChange=scored.percentChange;
-            improved=scored.status===null?null:scored.status==='MEMBAIK';
-          }
+      const metricRows=await tx.impactMetric.findMany({
+        where:{batchId,participantUserId:input.participantUserId},
+      });
+      for(const metric of metricRows){
+        const baselineProvided=metric.code in input.baselineMetrics;
+        const baselineInput=baselineProvided?input.baselineMetrics[metric.code]:undefined;
+        const baselineValue=baselineProvided
+          ? (baselineInput===null?null:baselineInput)
+          : (metric.baseline===null?null:Number(metric.baseline));
+
+        if(input.kind!=='D30'){
+          if(!baselineProvided)continue;
           const updated=await tx.impactMetric.update({
             where:{id:metric.id},
-            data:{day30:value,percentChange,improved},
+            data:{baseline:baselineValue,percentChange:null,improved:null},
           });
           updatedMetrics.push(updated);
+          continue;
         }
+
+        if(!(metric.code in input.day30Metrics)&&!baselineProvided)continue;
+        const day30Input=metric.code in input.day30Metrics?input.day30Metrics[metric.code]:(metric.day30===null?null:Number(metric.day30));
+        let percentChange:number|null=null;
+        let improved:boolean|null=null;
+        if(baselineValue!==null&&day30Input!==null){
+          const scored=impactMetric(baselineValue,day30Input,metric.direction);
+          percentChange=scored.percentChange;
+          improved=scored.status===null?null:scored.status==='MEMBAIK';
+        }
+        const updated=await tx.impactMetric.update({
+          where:{id:metric.id},
+          data:{baseline:baselineValue,day30:day30Input,percentChange,improved},
+        });
+        updatedMetrics.push(updated);
+      }
+      if(input.kind==='D30'){
         await tx.thirtyDayPlan.update({where:{id:plan.id},data:{status:'COMPLETED'}});
       }
 
       await tx.auditLog.create({data:{
         actorUserId:manager.id,tenantId:batch.tenantId,batchId,action:'UPDATE',
         resourceType:'FollowUp',resourceId:follow.id,
-        metadata:{participantUserId:input.participantUserId,kind:input.kind,progressPct:input.progressPct,statusLabel},
+        metadata:{participantUserId:input.participantUserId,kind:input.kind,progressPct:input.progressPct,statusLabel,sbiFeedbackProvided:Boolean(input.sbiFeedback),baselineMetricsUpdated:Object.keys(input.baselineMetrics).length},
       }});
       return{follow,updatedMetrics};
     });
