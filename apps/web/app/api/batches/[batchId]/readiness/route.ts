@@ -18,7 +18,7 @@ export async function GET(_req:Request,{params}:{params:Promise<{batchId:string}
     if(!batch)throw new HttpError('Batch tidak ditemukan',404);
     const actor=await assertPermission('TEAM_MANAGE',{tenantId:batch.tenantId,batchId});
 
-    const [members,teams,activities,preTest,tenantRole,batchRole]=await Promise.all([
+    const [members,teams,activities,preTest,tenantRole,batchRole,observerAssignments]=await Promise.all([
       prisma.batchMembership.findMany({
         where:{batchId,isActive:true},
         select:{
@@ -34,6 +34,7 @@ export async function GET(_req:Request,{params}:{params:Promise<{batchId:string}
       prisma.test.findFirst({where:{tenantId:null,code:'LTW_PRE_POST',version:1},select:{id:true}}),
       prisma.tenantMembership.findUnique({where:{tenantId_userId:{tenantId:batch.tenantId,userId:actor.id}},select:{role:true}}),
       prisma.batchMembership.findUnique({where:{batchId_userId:{batchId,userId:actor.id}},select:{role:true}}),
+      prisma.observerTeamAssignment.findMany({where:{batchId},select:{teamId:true,observerUserId:true}}),
     ]);
 
     const participants=members.filter(m=>m.role==='PARTICIPANT');
@@ -42,6 +43,8 @@ export async function GET(_req:Request,{params}:{params:Promise<{batchId:string}
     const facilitators=members.filter(m=>m.role==='CO_FACILITATOR').length;
     const assigned=participants.filter(p=>p.teamId).length;
     const activationPending=participants.filter(p=>!p.user.emailVerifiedAt||!p.user.passwordHash||!p.user.isActive).length;
+    const observerCoveredTeams=new Set(observerAssignments.map(a=>a.teamId)).size;
+    const observersAssigned=new Set(observerAssignments.map(a=>a.observerUserId)).size;
     const managerLinks=participantIds.length?await prisma.participantManagerLink.count({where:{batchId,participantUserId:{in:participantIds}}}):0;
 
     const preAttemptCount=preTest?await prisma.testAttempt.count({
@@ -93,9 +96,14 @@ export async function GET(_req:Request,{params}:{params:Promise<{batchId:string}
         detail:leadTrainers+' Lead Trainer aktif',
       },
       {
-        code:'FACILITATOR',label:'Observer / Co-Facilitator coverage',
+        code:'FACILITATOR',label:'Observer / Co-Facilitator availability',
         status:facilitators>=1?'PASS':'WARN',
         detail:facilitators+' Co-Facilitator aktif',
+      },
+      {
+        code:'OBSERVER_ASSIGNMENT',label:'Observer team coverage',
+        status:facilitators===0?'WARN':observerCoveredTeams===teams.length&&teams.length>0?'PASS':'WARN',
+        detail:observerCoveredTeams+'/'+teams.length+' tim covered · '+observersAssigned+'/'+facilitators+' observer assigned',
       },
       {
         code:'ACTIVATION',label:'Participant account activation',
@@ -141,7 +149,7 @@ export async function GET(_req:Request,{params}:{params:Promise<{batchId:string}
       summary:{ready:blocking===0,blocking,warnings,passed,total:checks.length},
       lifecycle:{canChangeStatus,nextStatus},
       checks,
-      counts:{participants:participants.length,assigned,teams:teams.length,leadTrainers,facilitators,managerLinks,activationPending},
+      counts:{participants:participants.length,assigned,teams:teams.length,leadTrainers,facilitators,observerCoveredTeams,observersAssigned,managerLinks,activationPending},
     });
   }catch(e){return jsonError(e)}
 }
