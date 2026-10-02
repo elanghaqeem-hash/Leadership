@@ -16,9 +16,9 @@ export async function GET(_req:Request,{params}:{params:Promise<{batchId:string}
       },
     });
     if(!batch)throw new HttpError('Batch tidak ditemukan',404);
-    await assertPermission('TEAM_MANAGE',{tenantId:batch.tenantId,batchId});
+    const actor=await assertPermission('TEAM_MANAGE',{tenantId:batch.tenantId,batchId});
 
-    const [members,teams,activities,preTest]=await Promise.all([
+    const [members,teams,activities,preTest,tenantRole,batchRole]=await Promise.all([
       prisma.batchMembership.findMany({
         where:{batchId,isActive:true},
         select:{
@@ -32,6 +32,8 @@ export async function GET(_req:Request,{params}:{params:Promise<{batchId:string}
         select:{id:true,type:true,status:true,config:true,_count:{select:{submissions:true}}},
       }),
       prisma.test.findFirst({where:{tenantId:null,code:'LTW_PRE_POST',version:1},select:{id:true}}),
+      prisma.tenantMembership.findUnique({where:{tenantId_userId:{tenantId:batch.tenantId,userId:actor.id}},select:{role:true}}),
+      prisma.batchMembership.findUnique({where:{batchId_userId:{batchId,userId:actor.id}},select:{role:true}}),
     ]);
 
     const participants=members.filter(m=>m.role==='PARTICIPANT');
@@ -130,11 +132,14 @@ export async function GET(_req:Request,{params}:{params:Promise<{batchId:string}
     }
 
     const blocking=checks.filter(c=>c.status==='BLOCK').length;
+    const canChangeStatus=actor.platformRole==='SUPER_ADMIN'||tenantRole?.role==='PROGRAM_ADMIN'||batchRole?.role==='PROGRAM_ADMIN';
+    const nextStatus=({DRAFT:'PRE_TRAINING',PRE_TRAINING:'ACTIVE',ACTIVE:'FOLLOW_UP',FOLLOW_UP:'CLOSED',CLOSED:'ARCHIVED'} as Record<string,string|undefined>)[batch.status]??null;
     const warnings=checks.filter(c=>c.status==='WARN').length;
     const passed=checks.filter(c=>c.status==='PASS').length;
     return NextResponse.json({
       batch:{id:batch.id,code:batch.code,name:batch.name,status:batch.status},
       summary:{ready:blocking===0,blocking,warnings,passed,total:checks.length},
+      lifecycle:{canChangeStatus,nextStatus},
       checks,
       counts:{participants:participants.length,assigned,teams:teams.length,leadTrainers,facilitators,managerLinks,activationPending},
     });
