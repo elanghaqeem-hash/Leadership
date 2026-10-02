@@ -64,4 +64,10 @@ describe('critical RBAC rules', () => {
     expect(can('CONTENT_MANAGE', { role:'LEAD_TRAINER', ...sameScope })).toBe(false);
   });
 
+  it('Attendance is managed by Program Admin and Lead Trainer', () => {
+    expect(can('ATTENDANCE_MANAGE', { role:'PROGRAM_ADMIN', ...sameScope })).toBe(true);
+    expect(can('ATTENDANCE_MANAGE', { role:'LEAD_TRAINER', ...sameScope })).toBe(true);
+    expect(can('ATTENDANCE_MANAGE', { role:'PARTICIPANT', ...sameScope })).toBe(false);
+  });
+
 });
