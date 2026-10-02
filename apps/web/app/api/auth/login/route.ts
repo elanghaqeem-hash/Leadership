@@ -7,6 +7,7 @@ import { createSession, hashIp, hashToken } from '@/lib/auth';
 import { userRequiresMfa } from '@/lib/mfa';
 import { jsonError } from '@/lib/http';
 import { headers } from 'next/headers';
+import { consumeRateLimit, rateLimitHeaders, requestIp } from '@/lib/rate-limit';
 
 const schema = z.object({
   email: z.string().email().transform((v) => v.toLowerCase()),
@@ -16,6 +17,8 @@ const schema = z.object({
 export async function POST(req: Request) {
   try {
     const input = schema.parse(await req.json());
+    const limit = await consumeRateLimit({scope:'AUTH_LOGIN',identifier:requestIp(req)+'|'+input.email,limit:8,windowMs:5*60_000});
+    if(!limit.allowed)return NextResponse.json({error:'Terlalu banyak percobaan login. Coba lagi beberapa saat.'},{status:429,headers:rateLimitHeaders(limit)});
     const user = await prisma.user.findUnique({ where: { email: input.email } });
     const valid = Boolean(user?.passwordHash) && await argon2.verify(user!.passwordHash!, input.password).catch(() => false);
     if (!user || !valid || !user.isActive) {
