@@ -241,8 +241,17 @@ export async function POST(req: Request, { params }: { params: Promise<{ activit
       scoreDetail = summary as Prisma.InputJsonValue;
         } else if (activity.type === 'MINUTE_AUDIT') {
       const parsed = minuteAuditSchema.parse(payload);
+      const summary = summarizeMinuteAudit(parsed.items);
+      const cfg = activity.config as { mode?: unknown };
+      if (cfg?.mode === 'DAY1' && summary.totalMinutes !== 480) {
+        return NextResponse.json({
+          error: 'G2 480-Minute Challenge harus berjumlah tepat 480 menit',
+          totalMinutes: summary.totalMinutes,
+          remainingMinutes: summary.remainingMinutes,
+        }, { status: 400 });
+      }
       normalized = parsed;
-      scoreDetail = summarizeMinuteAudit(parsed.items) as Prisma.InputJsonValue;
+      scoreDetail = summary as Prisma.InputJsonValue;
     } else if (activity.type === 'DAILY_BIG_3') {
       normalized = dailyBig3Schema.parse(payload);
     } else if (activity.type === 'MEETING_CHECKLIST') {
