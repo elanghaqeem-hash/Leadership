@@ -7,6 +7,7 @@ type Check={code:string;label:string;status:'PASS'|'WARN'|'BLOCK';detail:string}
 type Feed={
  batch:{id:string;code:string;name:string;status:string};
  summary:{ready:boolean;blocking:number;warnings:number;passed:number;total:number};
+ lifecycle:{canChangeStatus:boolean;nextStatus:string|null};
  checks:Check[];
  counts:{participants:number;assigned:number;teams:number;leadTrainers:number;facilitators:number;managerLinks:number;activationPending:number};
 };
@@ -16,14 +17,15 @@ function badge(status:Check['status']){
 }
 
 export default function ReadinessClient({batchId}:{batchId:string}){
- const[feed,setFeed]=useState<Feed|null>(null);const[error,setError]=useState('');
+ const[feed,setFeed]=useState<Feed|null>(null);const[error,setError]=useState('');const[busy,setBusy]=useState(false);
  async function load(){const r=await fetch('/api/batches/'+batchId+'/readiness',{cache:'no-store'});const d=await r.json();if(r.ok){setFeed(d);setError('')}else setError(d.error||'Gagal memuat readiness')}
+ async function advance(){if(!feed?.lifecycle.nextStatus)return;setBusy(true);setError('');const r=await fetch('/api/batches/'+batchId+'/lifecycle',{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({status:feed.lifecycle.nextStatus})});const d=await r.json();setBusy(false);if(!r.ok){setError(d.error||'Gagal mengubah status batch');return;}await load()}
  useEffect(()=>{void load()},[batchId]);useBatchRealtime(batchId,load,5000);
  if(!feed)return <div className="p-6 text-sm text-slate-600">{error||'Memeriksa kesiapan batch…'}</div>;
  return <div className="space-y-6">
    <section className={`rounded-3xl p-6 text-white ${feed.summary.ready?'bg-emerald-950':'bg-slate-950'}`}>
      <div className="text-xs font-bold uppercase tracking-[.18em] text-amber-300">Go-Live Readiness</div>
-     <div className="mt-2 flex flex-wrap items-end justify-between gap-4"><div><h2 className="text-3xl font-semibold">{feed.batch.name}</h2><p className="mt-1 text-sm text-white/70">{feed.batch.code} · {feed.batch.status}</p></div><div className="text-right"><div className="text-4xl font-bold">{feed.summary.ready?'READY':'NOT READY'}</div><div className="mt-1 text-sm text-white/70">{feed.summary.blocking} blocker · {feed.summary.warnings} warning</div></div></div>
+     <div className="mt-2 flex flex-wrap items-end justify-between gap-4"><div><h2 className="text-3xl font-semibold">{feed.batch.name}</h2><p className="mt-1 text-sm text-white/70">{feed.batch.code} · {feed.batch.status}</p></div><div className="text-right"><div className="text-4xl font-bold">{feed.summary.ready?'READY':'NOT READY'}</div><div className="mt-1 text-sm text-white/70">{feed.summary.blocking} blocker · {feed.summary.warnings} warning</div></div>{feed.lifecycle.canChangeStatus&&feed.lifecycle.nextStatus&&<button disabled={busy||(feed.lifecycle.nextStatus==='PRE_TRAINING'||feed.lifecycle.nextStatus==='ACTIVE')&&!feed.summary.ready} onClick={advance} className="rounded-xl bg-amber-300 px-4 py-3 text-sm font-bold text-slate-950 disabled:opacity-40">{busy?'Memproses…':'Advance to '+feed.lifecycle.nextStatus}</button>}</div>
    </section>
    <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">{[
     ['Participant',feed.counts.participants],['Assigned',feed.counts.assigned],['Teams',feed.counts.teams],['Lead Trainer',feed.counts.leadTrainers],['Facilitator',feed.counts.facilitators],['Manager Map',feed.counts.managerLinks],
