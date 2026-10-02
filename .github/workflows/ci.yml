@@ -88,6 +88,9 @@ jobs:
       - name: Classroom 30-participant latency smoke
         run: npm run test:classroom:load
 
+      - name: PDF and XLSX export smoke
+        run: npm run test:reports:http
+
       - name: Dependency audit gate
         run: npm audit --omit=dev --audit-level=high
 
