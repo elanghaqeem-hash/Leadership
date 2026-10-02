@@ -2,6 +2,8 @@
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useBatchRealtime } from '@/hooks/useBatchRealtime';
+import { useOfflineOutbox } from '@/hooks/useOfflineOutbox';
+import { submitActivityResilient } from '@/lib/offline-outbox';
 import StructuredTools, { STRUCTURED_TYPES } from './StructuredTools';
 import LiveGameVote from './LiveGameVote';
 import ArenaParticipant from './ArenaParticipant';
@@ -46,10 +48,7 @@ const dimensionLabels:Record<string,string>={
 };
 
 async function postSubmission(activityId:string,payload:unknown){
-  const r=await fetch(`/api/activities/${activityId}/submission`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({payload})});
-  const d=await r.json();
-  if(!r.ok)throw new Error(d.error||'Gagal menyimpan jawaban');
-  return d;
+  return submitActivityResilient(activityId,payload);
 }
 
 function StatusPill({status,done}:{status:string;done:boolean}){
@@ -127,12 +126,12 @@ function ActivityBody({batchId,activity,content,onSaved}:{batchId:string;activit
 }
 
 export default function ParticipantBatchClient({batchId}:{batchId:string}){
- const[feed,setFeed]=useState<Feed|null>(null);const[error,setError]=useState('');const[loading,setLoading]=useState(true);
+ const[feed,setFeed]=useState<Feed|null>(null);const[error,setError]=useState('');const[loading,setLoading]=useState(true);const{pending,online,flush}=useOfflineOutbox();
  async function load(){setLoading(true);const r=await fetch(`/api/batches/${batchId}/activities`,{cache:'no-store'});const d=await r.json();if(!r.ok){setError(d.error||'Gagal memuat aktivitas');setLoading(false);return;}setFeed(d);setLoading(false)}
  useEffect(()=>{void load()},[batchId]);
  useBatchRealtime(batchId,load,5000);
  const progress=useMemo(()=>{if(!feed)return{done:0,total:0};const relevant=feed.activities.filter(a=>a.status!=='DRAFT');return{done:relevant.filter(a=>Boolean(a.submission)||Boolean(a.testAttempt?.submittedAt)).length,total:relevant.length}},[feed]);
  if(loading)return <main className="min-h-screen bg-slate-50 p-4"><div className="mx-auto max-w-3xl animate-pulse space-y-4"><div className="h-28 rounded-3xl bg-slate-200"/><div className="h-40 rounded-2xl bg-slate-200"/></div></main>;
  if(!feed)return <main className="p-6 text-red-700">{error||'Data tidak tersedia'}</main>;
- return <main className="min-h-screen bg-slate-50 px-4 py-5 sm:py-8"><div className="mx-auto max-w-3xl"><header className="rounded-3xl bg-navy p-5 text-white shadow-lg sm:p-7"><div className="text-xs font-bold uppercase tracking-[.18em] text-amber-300">Leadership That Works</div><h1 className="mt-2 text-2xl font-semibold sm:text-3xl">{feed.batch.name}</h1><p className="mt-1 text-sm text-slate-300">{feed.batch.code} · {feed.membership?.role}</p><div className="mt-5"><div className="flex justify-between text-xs text-slate-300"><span>Progress aktivitas terbuka</span><span>{progress.done}/{progress.total}</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-white/15"><div className="h-full bg-amber-300" style={{width:`${progress.total?Math.round(progress.done/progress.total*100):0}%`}}/></div></div></header><div className="mt-5 space-y-4">{feed.activities.map(a=>{const code=typeof a.config?.contentCode==='string'?a.config.contentCode:'';const item=feed.content[code];return <section key={a.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5"><div className="flex items-start justify-between gap-3"><div><div className="text-xs font-bold uppercase tracking-wider text-slate-400">{a.session?.code} · {a.session?.title}</div><h2 className="mt-1 text-lg font-semibold">{a.title}</h2></div><StatusPill status={a.status} done={Boolean(a.submission)||Boolean(a.testAttempt?.submittedAt)}/></div>{(a.status==='OPEN'||a.submission)&&<ActivityBody batchId={batchId} activity={a} content={item} onSaved={load}/>}</section>})}</div></div></main>
+ return <main className="min-h-screen bg-slate-50 px-4 py-5 sm:py-8"><div className="mx-auto max-w-3xl"><header className="rounded-3xl bg-navy p-5 text-white shadow-lg sm:p-7"><div className="text-xs font-bold uppercase tracking-[.18em] text-amber-300">Leadership That Works</div><h1 className="mt-2 text-2xl font-semibold sm:text-3xl">{feed.batch.name}</h1><p className="mt-1 text-sm text-slate-300">{feed.batch.code} · {feed.membership?.role}</p><div className="mt-3 flex flex-wrap items-center gap-2 text-xs"><span className={`rounded-full px-2.5 py-1 font-semibold ${online?'bg-emerald-400/15 text-emerald-200':'bg-amber-400/15 text-amber-200'}`}>{online?'Online':'Offline mode'}</span>{pending>0&&<button type="button" onClick={()=>void flush()} className="rounded-full bg-amber-300 px-2.5 py-1 font-semibold text-slate-950">{pending} pending sync · Sinkronkan</button>}</div><div className="mt-5"><div className="flex justify-between text-xs text-slate-300"><span>Progress aktivitas terbuka</span><span>{progress.done}/{progress.total}</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-white/15"><div className="h-full bg-amber-300" style={{width:`${progress.total?Math.round(progress.done/progress.total*100):0}%`}}/></div></div></header><div className="mt-5 space-y-4">{feed.activities.map(a=>{const code=typeof a.config?.contentCode==='string'?a.config.contentCode:'';const item=feed.content[code];return <section key={a.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5"><div className="flex items-start justify-between gap-3"><div><div className="text-xs font-bold uppercase tracking-wider text-slate-400">{a.session?.code} · {a.session?.title}</div><h2 className="mt-1 text-lg font-semibold">{a.title}</h2></div><StatusPill status={a.status} done={Boolean(a.submission)||Boolean(a.testAttempt?.submittedAt)}/></div>{(a.status==='OPEN'||a.submission)&&<ActivityBody batchId={batchId} activity={a} content={item} onSaved={load}/>}</section>})}</div></div></main>
 }
