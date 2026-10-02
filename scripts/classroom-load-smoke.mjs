@@ -38,7 +38,7 @@ try {
       joinCode: String(100000 + Math.floor(Math.random()*900000)),
       startDate: new Date(),
       endDate: new Date(Date.now()+24*60*60*1000),
-      status: 'IN_PROGRESS',
+      status: 'ACTIVE',
       teamCount: 4,
       participantTarget: participantCount,
     },
