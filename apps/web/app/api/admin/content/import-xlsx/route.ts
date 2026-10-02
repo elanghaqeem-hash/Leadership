@@ -82,7 +82,7 @@ export async function POST(req:Request){
     const dryRun=new URL(req.url).searchParams.get('dryRun')==='1';
 
     const wb=new ExcelJS.Workbook();
-    await wb.xlsx.load(Buffer.from(await file.arrayBuffer()));
+    await wb.xlsx.load(Buffer.from(await file.arrayBuffer()) as any);
 
     const contentRows:ContentRow[]=[];
     const rubricRows:RubricRow[]=[];
