@@ -5,11 +5,14 @@ import { prisma } from '@ltw/db';
 import { hashToken } from '@/lib/auth';
 import { jsonError } from '@/lib/http';
 import { sendAccountNotification } from '@/lib/notifications';
+import { consumeRateLimit, rateLimitHeaders, requestIp } from '@/lib/rate-limit';
 
 const schema=z.object({email:z.string().email().transform(v=>v.toLowerCase())});
 export async function POST(req:Request){
  try{
   const {email}=schema.parse(await req.json());
+  const limit=await consumeRateLimit({scope:'MANAGER_MAGIC_LINK',identifier:requestIp(req)+'|'+email,limit:5,windowMs:15*60_000});
+  if(!limit.allowed)return NextResponse.json({error:'Terlalu banyak permintaan. Coba lagi nanti.'},{status:429,headers:rateLimitHeaders(limit)});
   const user=await prisma.user.findUnique({where:{email},include:{batchMemberships:{where:{role:'LINE_MANAGER',isActive:true},take:1}}});
   let devMagicLink:string|undefined;
   if(user&&user.isActive&&user.batchMemberships.length){
