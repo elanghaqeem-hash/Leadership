@@ -163,14 +163,40 @@ export async function POST(req: Request, { params }: { params: Promise<{ activit
     try {
       const { activityId } = await params;
       const { choice } = voteSchema.parse(await req.json());
-      const { activity, content } = await loadGame(activityId, db);
-      if (activity.status !== 'OPEN') throw new HttpError('Game belum dibuka atau sudah dikunci', 409);
 
-      const user = await requireUser(db);
-      const membership = await db.batchMembership.findUnique({
-        where: { batchId_userId: { batchId: activity.batchId, userId: user.id } },
-        select: { role: true, teamId: true, isActive: true },
-      });
+      const [activity, user] = await Promise.all([
+        db.activity.findUnique({
+          where: { id: activityId },
+          select: {
+            id: true,
+            tenantId: true,
+            batchId: true,
+            type: true,
+            status: true,
+            config: true,
+          },
+        }),
+        requireUser(db),
+      ]);
+
+      if (!activity || !supported.has(activity.type)) {
+        throw new HttpError('Live game tidak ditemukan', 404);
+      }
+      if (activity.status !== 'OPEN') {
+        throw new HttpError('Game belum dibuka atau sudah dikunci', 409);
+      }
+
+      const [membership, round] = await Promise.all([
+        db.batchMembership.findUnique({
+          where: { batchId_userId: { batchId: activity.batchId, userId: user.id } },
+          select: { role: true, teamId: true, isActive: true },
+        }),
+        db.gameRound.findFirst({
+          where: { activityId, teamId: null },
+          orderBy: { roundNo: 'desc' },
+        }),
+      ]);
+
       if (!membership?.isActive || membership.role !== 'PARTICIPANT') {
         throw new HttpError('Hanya participant aktif yang dapat voting', 403);
       }
@@ -184,15 +210,30 @@ export async function POST(req: Request, { params }: { params: Promise<{ activit
       })) {
         throw new HttpError('Forbidden', 403);
       }
-
-      const round = await db.gameRound.findFirst({
-        where: { activityId, teamId: null },
-        orderBy: { roundNo: 'desc' },
-      });
       if (!round) throw new HttpError('Round belum dimulai trainer', 409);
 
       const state = stateOf(round.state);
-      if (state.phase !== 'VOTING') throw new HttpError('Voting round sudah ditutup/reveal', 409);
+      if (state.phase !== 'VOTING') {
+        throw new HttpError('Voting round sudah ditutup/reveal', 409);
+      }
+
+      let content: { payload: Prisma.JsonValue } | undefined;
+      if (activity.type === 'BIAS_TRAP') {
+        const cfg = activity.config as { gameContentCode?: unknown };
+        const code = typeof cfg?.gameContentCode === 'string' ? cfg.gameContentCode : null;
+        if (!code) throw new HttpError('Konten live game belum dikonfigurasi', 409);
+        const row = await db.contentItem.findFirst({
+          where: {
+            code,
+            isPublished: true,
+            OR: [{ tenantId: null }, { tenantId: activity.tenantId }],
+          },
+          orderBy: { version: 'desc' },
+          select: { payload: true },
+        });
+        if (!row) throw new HttpError('Konten game tidak ditemukan', 404);
+        content = row;
+      }
 
       const choices = allowedChoices(activity.type, content);
       const normalizedChoice = choices.find((item) => item.toLowerCase() === choice.toLowerCase());
@@ -226,17 +267,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ activit
         },
       });
 
-      const votePrefix = `game:${activityId}:${round.roundNo}:${state.stage}:`;
-      const totalVotes = await db.submission.count({
-        where: { activityId, submissionKey: { startsWith: votePrefix } },
-      });
       publishBatchEvent(activity.batchId, 'GAME_STATE', activity.id);
-
-      return NextResponse.json({
-        ok: true,
-        choice: normalizedChoice,
-        totalVotes,
-      });
+      return NextResponse.json({ ok: true, choice: normalizedChoice });
     } catch (e) {
       return jsonError(e);
     }
