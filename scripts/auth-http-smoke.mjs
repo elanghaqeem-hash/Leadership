@@ -33,3 +33,19 @@ const payload = await me.json();
 if (payload?.user?.email !== email) throw new Error('Authenticated user mismatch');
 
 console.log(JSON.stringify({ ok: true, email: payload.user.email, securityHeaders: security }, null, 2));
+
+
+// Rate-limit smoke: invalid login attempts are throttled without affecting the valid session above.
+const invalidEmail='rate-limit-'+Date.now()+'@example.local';
+const statuses=[];
+for(let i=0;i<9;i++){
+  const r=await fetch(`${base}/api/auth/login`,{
+    method:'POST',
+    headers:{'content-type':'application/json','x-forwarded-for':'203.0.113.77'},
+    body:JSON.stringify({email:invalidEmail,password:'Invalid-Password-2026!'}),
+  });
+  statuses.push(r.status);
+}
+if(statuses.slice(0,8).some(x=>x!==401))throw new Error('Unexpected pre-limit login statuses: '+JSON.stringify(statuses));
+if(statuses[8]!==429)throw new Error('Rate-limit smoke expected 429 on ninth attempt: '+JSON.stringify(statuses));
+console.log(JSON.stringify({rateLimit:true,statuses},null,2));
