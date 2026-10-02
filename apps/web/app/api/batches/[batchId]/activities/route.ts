@@ -60,6 +60,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ batchId
     const byActivity = new Map(submissions.map((s) => [s.activityId, s]));
     return NextResponse.json({
       batch,
+      currentUserId: user.id,
       membership,
       content: Object.fromEntries(contentItems.map((item) => [item.code, item])),
       activities: activities.map((a) => ({
