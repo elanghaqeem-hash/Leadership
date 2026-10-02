@@ -6,9 +6,10 @@ import ImpactDashboardClient from './ImpactDashboardClient';
 
 export default async function ImpactPage({params}:{params:Promise<{batchId:string}>}){
  const {batchId}=await params;
- const batch=await prisma.batch.findUnique({where:{id:batchId},select:{id:true,tenantId:true,code:true,name:true,_count:{select:{memberships:true}}}});
+ const batch=await prisma.batch.findUnique({where:{id:batchId},select:{id:true,tenantId:true,code:true,name:true}});
  if(!batch)redirect('/dashboard');
- try{await assertPermission('AGGREGATE_DASHBOARD_READ',{tenantId:batch.tenantId,batchId,aggregateSize:batch._count.memberships});}
+ const participantCount=await prisma.batchMembership.count({where:{batchId,role:'PARTICIPANT',isActive:true}});
+ try{await assertPermission('AGGREGATE_DASHBOARD_READ',{tenantId:batch.tenantId,batchId,aggregateSize:participantCount});}
  catch(error){if(error instanceof AuthError)redirect('/dashboard');throw error;}
  return <Shell title="Training Impact" eyebrow={batch.code+' · '+batch.name}><ImpactDashboardClient batchId={batchId}/></Shell>;
 }
