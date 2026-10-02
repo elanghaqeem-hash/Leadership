@@ -58,4 +58,10 @@ describe('critical RBAC rules', () => {
     expect(can('ANSWER_KEY_REVEAL', { role: 'PARTICIPANT', ...sameScope })).toBe(false);
     expect(can('SESSION_CONTROL', { role: 'PARTICIPANT', ...sameScope })).toBe(false);
   });
+  it('Content management is Super Admin only', () => {
+    expect(can('CONTENT_MANAGE', { role:'SUPER_ADMIN' })).toBe(true);
+    expect(can('CONTENT_MANAGE', { role:'PROGRAM_ADMIN', ...sameScope })).toBe(false);
+    expect(can('CONTENT_MANAGE', { role:'LEAD_TRAINER', ...sameScope })).toBe(false);
+  });
+
 });
