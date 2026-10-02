@@ -26,7 +26,7 @@
     "test:mfa": "vitest run apps/web/test/mfa.test.ts",
     "test:rls": "node scripts/rls-smoke.mjs",
     "test:auth:http": "node scripts/auth-http-smoke.mjs",
-    "test:sprint2": "vitest run packages/authz/test/rbac.matrix.test.ts packages/imports/test/participants.test.ts packages/scoring/test/scoring.test.ts packages/activities/test/activities.test.ts packages/content/test/blueprint.test.ts apps/web/test/mfa.test.ts apps/web/test/simple-pdf.test.ts",
+    "test:sprint2": "vitest run packages/authz/test/rbac.matrix.test.ts packages/imports/test/participants.test.ts packages/scoring/test/scoring.test.ts packages/activities/test/activities.test.ts packages/content/test/blueprint.test.ts apps/web/test/mfa.test.ts apps/web/test/simple-pdf.test.ts apps/web/test/password.test.ts",
     "test:classroom:load": "node scripts/classroom-load-smoke.mjs",
     "test:reports:http": "node scripts/report-export-smoke.mjs",
     "test:classroom:games": "node scripts/classroom-game-load-smoke.mjs",
