@@ -27,6 +27,7 @@ jobs:
       APP_URL: http://127.0.0.1:3000
       APP_SECRET: ci-only-app-secret-at-least-32-bytes-long
       MFA_ENCRYPTION_KEY: ci-only-mfa-encryption-key-at-least-32-bytes
+      NEXT_PUBLIC_REALTIME_WS_ENABLED: 1
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -71,7 +72,7 @@ jobs:
 
       - name: Start production server
         run: |
-          npm --workspace @ltw/web run start > /tmp/leadership-next.log 2>&1 &
+          npm --workspace @ltw/web run start:ws > /tmp/leadership-next.log 2>&1 &
           echo $! > /tmp/leadership-next.pid
           for i in {1..30}; do
             if curl -fsS http://127.0.0.1:3000/api/health >/dev/null; then
