@@ -12,10 +12,10 @@ type Row={
 };
 type Feed={batch:{id:string;code:string;name:string};config:{questions:string[];thresholds:any};subordinates:Row[]};
 
-const kinds=['D7','D14','D30'] as const;
+const kinds=['D14','D30'] as const;
 
 function FollowUpEditor({batchId,row,questions,onSaved}:{batchId:string;row:Row;questions:string[];onSaved:()=>void}){
- const[kind,setKind]=useState<'D7'|'D14'|'D30'>('D7');
+ const[kind,setKind]=useState<'D14'|'D30'>('D14');
  const[answers,setAnswers]=useState<string[]>(Array(5).fill(''));
  const[progress,setProgress]=useState(70);
  const[metrics,setMetrics]=useState<Record<string,string>>({});
@@ -39,7 +39,7 @@ function FollowUpEditor({batchId,row,questions,onSaved}:{batchId:string;row:Row;
  if(!row.plan)return <div className="mt-3 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">Participant belum mengaktifkan 30-Day Plan.</div>;
  return <div className="mt-4 space-y-4">
    <div className="grid grid-cols-3 gap-2">{kinds.map(k=><button key={k} type="button" onClick={()=>setKind(k)} className={`rounded-xl px-3 py-2 text-sm font-bold ring-1 ${kind===k?'bg-navy text-white ring-navy':'bg-white text-slate-600 ring-slate-200'}`}>{k}</button>)}</div>
-   <div className="rounded-xl bg-slate-50 p-3 text-xs text-slate-600">Target review: {kind==='D7'?new Date(row.plan.reviewD7).toLocaleDateString('id-ID'):kind==='D14'?new Date(row.plan.reviewD14).toLocaleDateString('id-ID'):new Date(row.plan.reviewD30).toLocaleDateString('id-ID')}</div>
+   <div className="rounded-xl bg-slate-50 p-3 text-xs text-slate-600">Target review: {kind==='D14'?new Date(row.plan.reviewD14).toLocaleDateString('id-ID'):new Date(row.plan.reviewD30).toLocaleDateString('id-ID')}</div>
    <div className="space-y-3">{questions.map((q,i)=><label key={i} className="block text-sm font-semibold text-navy">{q}<textarea value={answers[i]} onChange={e=>setAnswers(answers.map((x,j)=>j===i?e.target.value:x))} className="mt-1 min-h-20 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" required/></label>)}</div>
    <label className="block text-sm font-semibold text-navy">Progress terhadap target: {progress}%<input type="range" min="0" max="100" step="5" value={progress} onChange={e=>setProgress(Number(e.target.value))} className="mt-2 w-full accent-teal"/></label>
    {kind==='D30'&&<div className="rounded-2xl border border-slate-200 p-4"><div className="font-semibold text-navy">Impact Metrics — Day 30</div><div className="mt-3 grid gap-3 sm:grid-cols-2">{row.metrics.map(m=><label key={m.code} className="rounded-xl bg-slate-50 p-3 text-sm"><span className="font-medium">{m.name}</span><span className="ml-1 text-xs text-slate-500">baseline {m.baseline??'—'}</span><input type="number" step="any" value={metrics[m.code]||''} onChange={e=>setMetrics(v=>({...v,[m.code]:e.target.value}))} placeholder="Nilai D+30" className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2"/>{m.percentChange!==null&&m.percentChange!==undefined&&<div className={`mt-2 text-xs font-semibold ${m.improved?'text-emerald-700':'text-amber-700'}`}>{(m.percentChange*100).toFixed(1)}% · {m.improved?'Membaik':'Belum membaik'}</div>}</label>)}</div></div>}
