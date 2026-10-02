@@ -1,5 +1,6 @@
 import { createCipheriv, createDecipheriv, createHmac, createHash, randomBytes } from 'node:crypto';
 import { prisma } from '@ltw/db';
+import type { PrismaClient } from '@prisma/client';
 
 const STEP_SECONDS = 30;
 const DIGITS = 6;
@@ -108,8 +109,8 @@ export function otpauthUri(secret: string, email: string, issuer = 'Leadership T
   return `otpauth://totp/${label}?${params.toString()}`;
 }
 
-export async function userRequiresMfa(userId: string): Promise<boolean> {
-  const user = await prisma.user.findUnique({
+export async function userRequiresMfa(userId: string, db: PrismaClient = prisma): Promise<boolean> {
+  const user = await db.user.findUnique({
     where: { id: userId },
     select: {
       platformRole: true,
