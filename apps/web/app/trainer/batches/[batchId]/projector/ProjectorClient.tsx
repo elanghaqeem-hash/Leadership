@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useBatchRealtime } from '@/hooks/useBatchRealtime';
+import TeamLeaderboardPanel from '@/components/TeamLeaderboardPanel';
 
 type Activity={id:string;title:string;type:string;status:string;openedAt?:string|null};
 type Session={activities:Activity[]};
@@ -12,6 +13,7 @@ type WarFeed={round:any;events:any[];leaderboard:any[]|null};
 type AuctionFeed={round:any;roundInfo:string|null;leaderboard:any[]|null;readiness:any[]|null};
 type BoardFeed={round:any;case:any;timerSec:number};
 type CalendarFeed={round:any;disruptions:any[];readiness:any[]|null};
+type DetectiveFeed={round:any;diagnosisKey:string|null;teams:any[]|null};
 type RootCauseFeed={round:any;caseTitle:string;verifiedLeaderboard:any[]|null;teams:any[]|null};
 
 const LIVE_GAME_TYPES=new Set(['LEADERSHIP_MIRROR','PRIORITY_POKER','FACT_OR_FICTION','BIAS_TRAP']);
@@ -23,7 +25,7 @@ function mmss(seconds:number){
 }
 
 export default function ProjectorClient({batchId}:{batchId:string}){
- const[feed,setFeed]=useState<Feed|null>(null);const[game,setGame]=useState<GameFeed|null>(null);const[arena,setArena]=useState<ArenaFeed|null>(null);const[war,setWar]=useState<WarFeed|null>(null);const[auction,setAuction]=useState<AuctionFeed|null>(null);const[board,setBoard]=useState<BoardFeed|null>(null);const[calendar,setCalendar]=useState<CalendarFeed|null>(null);const[rootCause,setRootCause]=useState<RootCauseFeed|null>(null);const[now,setNow]=useState(Date.now());
+ const[feed,setFeed]=useState<Feed|null>(null);const[game,setGame]=useState<GameFeed|null>(null);const[arena,setArena]=useState<ArenaFeed|null>(null);const[war,setWar]=useState<WarFeed|null>(null);const[auction,setAuction]=useState<AuctionFeed|null>(null);const[board,setBoard]=useState<BoardFeed|null>(null);const[calendar,setCalendar]=useState<CalendarFeed|null>(null);const[detective,setDetective]=useState<DetectiveFeed|null>(null);const[rootCause,setRootCause]=useState<RootCauseFeed|null>(null);const[now,setNow]=useState(Date.now());
  async function load(){
    const r=await fetch('/api/trainer/batches/'+batchId+'/session-control',{cache:'no-store'});
    const d=await r.json();
@@ -35,35 +37,39 @@ export default function ProjectorClient({batchId}:{batchId:string}){
        const gd=await gr.json();
        setGame(gr.ok?gd:null);
        setArena(null);
-       setWar(null);setAuction(null);setBoard(null);setCalendar(null);setRootCause(null);
+       setWar(null);setAuction(null);setBoard(null);setCalendar(null);setDetective(null);setRootCause(null);
      }else if(active?.type==='ARENA'){
        const ar=await fetch('/api/games/'+active.id+'/arena',{cache:'no-store'});
        const ad=await ar.json();
        setArena(ar.ok?ad:null);
        setGame(null);
-       setWar(null);setAuction(null);setBoard(null);setCalendar(null);setRootCause(null);
+       setWar(null);setAuction(null);setBoard(null);setCalendar(null);setDetective(null);setRootCause(null);
      }else if(active?.type==='WAR_ROOM'){
        const wr=await fetch('/api/games/'+active.id+'/war-room',{cache:'no-store'});
        const wd=await wr.json();
        setWar(wr.ok?wd:null);
-       setGame(null);setArena(null);setAuction(null);setBoard(null);setCalendar(null);setRootCause(null);
+       setGame(null);setArena(null);setAuction(null);setBoard(null);setCalendar(null);setDetective(null);setRootCause(null);
      }else if(active?.type==='DECISION_AUCTION'){
        const qr=await fetch('/api/games/'+active.id+'/decision-auction',{cache:'no-store'});
        const qd=await qr.json();
-       setAuction(qr.ok?qd:null);setGame(null);setArena(null);setWar(null);setBoard(null);setCalendar(null);setRootCause(null);
+       setAuction(qr.ok?qd:null);setGame(null);setArena(null);setWar(null);setBoard(null);setCalendar(null);setDetective(null);setRootCause(null);
      }else if(active?.type==='BOARDROOM'){
        const br=await fetch('/api/games/'+active.id+'/boardroom',{cache:'no-store'});
        const bd=await br.json();
-       setBoard(br.ok?bd:null);setGame(null);setArena(null);setWar(null);setAuction(null);setCalendar(null);setRootCause(null);
+       setBoard(br.ok?bd:null);setGame(null);setArena(null);setWar(null);setAuction(null);setCalendar(null);setDetective(null);setRootCause(null);
      }else if(active?.type==='CALENDAR_TETRIS'){
        const cr=await fetch('/api/games/'+active.id+'/calendar-tetris',{cache:'no-store'});
        const cd=await cr.json();
-       setCalendar(cr.ok?cd:null);setGame(null);setArena(null);setWar(null);setAuction(null);setBoard(null);setRootCause(null);
+       setCalendar(cr.ok?cd:null);setGame(null);setArena(null);setWar(null);setAuction(null);setBoard(null);setDetective(null);setRootCause(null);
+     }else if(active?.type==='DETECTIVE_ROOM'){
+       const dr=await fetch('/api/games/'+active.id+'/detective-room',{cache:'no-store'});
+       const dd=await dr.json();
+       setDetective(dr.ok?dd:null);setGame(null);setArena(null);setWar(null);setAuction(null);setBoard(null);setCalendar(null);setRootCause(null);
      }else if(active?.type==='ROOT_CAUSE_RACE'){
        const rr=await fetch('/api/games/'+active.id+'/root-cause-race',{cache:'no-store'});
        const rd=await rr.json();
        setRootCause(rr.ok?rd:null);setGame(null);setArena(null);setWar(null);setAuction(null);setBoard(null);setCalendar(null);
-     }else { setGame(null); setArena(null); setWar(null); setAuction(null); setBoard(null); setCalendar(null); setRootCause(null); }
+     }else { setGame(null); setArena(null); setWar(null); setAuction(null); setBoard(null); setCalendar(null); setDetective(null); setRootCause(null); }
    }
  }
  useEffect(()=>{void load();const t=setInterval(()=>setNow(Date.now()),1000);return()=>clearInterval(t)},[batchId]);
@@ -72,6 +78,11 @@ export default function ProjectorClient({batchId}:{batchId:string}){
  const elapsed=active?.openedAt?Math.max(0,Math.floor((now-new Date(active.openedAt).getTime())/1000)):0;
  const prompt=game?.card?.situation||game?.card?.prompt||game?.card?.statement||'';
  const max=game?.aggregate?Math.max(1,...Object.values(game.aggregate)):1;
+ const boardRemaining=board?.round
+   ? board.round.phase==='STOPPED'
+     ? Math.max(0,Number(board.round.remainingAtStop??board.round.remainingSec??0))
+     : Math.max(0,board.timerSec-Math.floor((now-new Date(board.round.startedAt).getTime())/1000))
+   : 0;
  if(!feed)return <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white"><div className="text-xl">Memuat Projector Mode…</div></main>;
  return <main className="min-h-screen bg-slate-950 p-6 text-white">
    <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-7xl flex-col">
@@ -98,14 +109,17 @@ export default function ProjectorClient({batchId}:{batchId:string}){
        {auction?.roundInfo&&<div className="mt-8 rounded-3xl bg-amber-400/10 p-8 text-3xl font-semibold text-amber-100 ring-1 ring-amber-400/20">{auction.roundInfo}</div>}
        {auction?.readiness&&<div className="mt-8 grid gap-3 md:grid-cols-2">{auction.readiness.map((x:any)=><div key={x.team.id} className="rounded-2xl bg-white/5 p-5 ring-1 ring-white/10"><div className="flex items-center justify-between text-xl"><span>{x.team.name}</span><b className={x.submitted?'text-emerald-300':'text-slate-500'}>{x.submitted?'Submitted':'Waiting'}</b></div></div>)}</div>}
        {auction?.leaderboard&&<div className="mt-8 grid gap-3 md:grid-cols-2">{auction.leaderboard.filter((x:any)=>x.complete).map((x:any)=><div key={x.team.id} className="rounded-2xl bg-white/5 p-5 ring-1 ring-white/10"><div className="flex items-center justify-between text-2xl"><span>#{x.rank} {x.team.name}</span><b>NET {Math.round(x.score?.net||0)}</b></div><div className="mt-2 text-sm text-slate-400">Switch {Math.round(x.score?.switchingCost||0)} · Risk {x.score?.riskExposure||0}</div></div>)}</div>}
-       {board?.round&&board.case&&<div className="mt-8 rounded-3xl bg-white/5 p-8 ring-1 ring-white/10"><div className="flex items-center justify-between gap-6"><div><div className="text-sm font-bold uppercase tracking-wider text-amber-300">60-Second Boardroom · {board.case.label}</div><div className="mt-4 max-w-4xl text-3xl font-semibold leading-relaxed">{board.case.brief}</div></div><div className={`font-mono text-7xl font-bold ${board.round.remainingSec<=10?'text-red-300':'text-amber-300'}`}>{mmss(board.round.remainingSec)}</div></div></div>}
+       {board?.round&&board.case&&<div className="mt-8 rounded-3xl bg-white/5 p-8 ring-1 ring-white/10"><div className="flex items-center justify-between gap-6"><div><div className="text-sm font-bold uppercase tracking-wider text-amber-300">60-Second Boardroom · {board.case.label}</div><div className="mt-4 max-w-4xl text-3xl font-semibold leading-relaxed">{board.case.brief}</div></div><div className={`font-mono text-7xl font-bold ${boardRemaining<=10?'text-red-300':'text-amber-300'}`}>{mmss(boardRemaining)}</div></div></div>}
        {calendar?.round&&<div className="mt-5 text-xl text-slate-400">Calendar Tetris · {calendar.round.phase} · {calendar.round.sentDisruptions?.length||0}/4 disruption</div>}
        {calendar&&calendar.disruptions.length>0&&<div className="mt-8 rounded-3xl bg-amber-400/10 p-8 ring-1 ring-amber-400/20"><div className="text-sm font-bold uppercase tracking-wider text-amber-300">Calendar Tetris Disruption</div><div className="mt-3 text-3xl font-semibold text-amber-100">{calendar.disruptions[calendar.disruptions.length-1].event}</div></div>}
        {calendar?.readiness&&<div className="mt-8 grid gap-3 md:grid-cols-2">{calendar.readiness.map((x:any)=><div key={x.team.id} className="rounded-2xl bg-white/5 p-5 ring-1 ring-white/10"><div className="flex items-center justify-between text-xl"><span>{x.team.name}</span><b className={x.submitted?'text-emerald-300':'text-slate-500'}>{x.submitted?'Calendar Saved':'Waiting'}</b></div></div>)}</div>}
+       {detective?.round&&<div className="mt-5 text-xl text-slate-400">Detective Room · {detective.round.phase} · token {detective.round.tokenBudget}</div>}
+       {detective?.teams&&<div className="mt-8 grid gap-3 md:grid-cols-2">{detective.teams.map((x:any)=><div key={x.team.id} className="rounded-2xl bg-white/5 p-5 ring-1 ring-white/10"><div className="flex items-center justify-between text-xl"><span>{x.rank?'#'+x.rank+' ':''}{x.team.name}</span><b className={x.score?'text-emerald-300':'text-slate-500'}>{x.score?x.score.total+' pts':x.state?.diagnosis?'Awaiting judge':'Investigating'}</b></div><div className="mt-2 text-sm text-slate-400">{x.state?.purchased?.length||0} evidence · {x.remainingTokens} token</div></div>)}</div>}
        {rootCause?.round&&<div className="mt-8 rounded-3xl bg-white/5 p-8 ring-1 ring-white/10"><div className="text-sm font-bold uppercase tracking-wider text-amber-300">Root Cause Race · {rootCause.round.phase}</div><div className="mt-3 text-4xl font-semibold">{rootCause.caseTitle}</div></div>}
        {rootCause?.teams&&<div className="mt-8 grid gap-3 md:grid-cols-2">{rootCause.teams.map((x:any)=><div key={x.team.id} className="rounded-2xl bg-white/5 p-5 ring-1 ring-white/10"><div className="flex items-center justify-between text-xl"><span>{x.team.name}</span><b className={x.answer?'text-emerald-300':'text-slate-500'}>{x.answer?'Submitted':'Working'}</b></div></div>)}</div>}
        {rootCause?.verifiedLeaderboard&&rootCause.verifiedLeaderboard.length>0&&<div className="mt-8 grid gap-3 md:grid-cols-2">{rootCause.verifiedLeaderboard.map((x:any)=><div key={x.team.id} className="rounded-2xl bg-emerald-400/10 p-5 ring-1 ring-emerald-400/20"><div className="flex items-center justify-between text-2xl"><span>#{x.rank} {x.team.name}</span><b>{mmss(x.elapsedSec)}</b></div></div>)}</div>}
      </div>}
+     <div className="mt-8"><TeamLeaderboardPanel batchId={batchId} compact/></div>
    </div>
  </main>
 }
