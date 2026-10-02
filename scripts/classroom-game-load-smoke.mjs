@@ -147,7 +147,47 @@ try{
   if(rtFail.length)throw new Error(`Realtime subscription failed ${rtFail.length}/${participants}: ${rtFail[0]?.text}`);
   const rtP95=percentile(realtime.map(x=>x.elapsed),0.95);
   if(rtP95>=thresholdMs)throw new Error(`Realtime subscribe p95 ${rtP95.toFixed(1)}ms exceeds ${thresholdMs}ms`);
-  metrics.push({name:'Realtime subscriptions',p50Ms:Number(percentile(realtime.map(x=>x.elapsed),0.5).toFixed(1)),p95Ms:Number(rtP95.toFixed(1)),maxMs:Number(Math.max(...realtime.map(x=>x.elapsed)).toFixed(1))});
+  metrics.push({name:'Realtime SSE fallback subscriptions',p50Ms:Number(percentile(realtime.map(x=>x.elapsed),0.5).toFixed(1)),p95Ms:Number(rtP95.toFixed(1)),maxMs:Number(Math.max(...realtime.map(x=>x.elapsed)).toFixed(1))});
+
+  if(typeof WebSocket!=='function')throw new Error('Node runtime does not expose WebSocket for realtime smoke');
+  const wsBase=base.replace(/^http:/,'ws:').replace(/^https:/,'wss:');
+  const sockets=await Promise.all(clients.map(async client=>{
+    const tokenResponse=await fetch(base+`/api/realtime/token?batchId=${batch.id}`,{headers:{cookie:client.cookie}});
+    if(!tokenResponse.ok)throw new Error('Realtime token failed '+tokenResponse.status+' '+await tokenResponse.text());
+    const tokenData=await tokenResponse.json();
+    const started=performance.now();
+    let readyAt=0;
+    let resolveReady,resolveChange,rejectReady,rejectChange;
+    const ready=new Promise((resolve,reject)=>{resolveReady=resolve;rejectReady=reject});
+    const change=new Promise((resolve,reject)=>{resolveChange=resolve;rejectChange=reject});
+    const socket=new WebSocket(wsBase+(tokenData.path||'/ws/realtime')+'?token='+encodeURIComponent(tokenData.token));
+    const timer=setTimeout(()=>{rejectReady(new Error('WS ready timeout'));rejectChange(new Error('WS change timeout'));try{socket.close()}catch{}},5000);
+    socket.onmessage=event=>{
+      try{
+        const msg=JSON.parse(String(event.data));
+        if(msg.event==='ready'&&!readyAt){readyAt=performance.now();resolveReady(readyAt-started);}
+        if(msg.event==='change')resolveChange(performance.now());
+      }catch{}
+    };
+    socket.onerror=()=>{rejectReady(new Error('WS error'));rejectChange(new Error('WS error'));};
+    return{socket,ready,change,timer};
+  }));
+  const wsReady=await Promise.all(sockets.map(x=>x.ready));
+  const publishStarted=performance.now();
+  await patchTrainer(trainerCookie,activities.WAR_ROOM.id,'war-room',{command:'SEND_EVENT',eventNo:1});
+  const changeTimes=await Promise.all(sockets.map(x=>x.change));
+  sockets.forEach(x=>{clearTimeout(x.timer);try{x.socket.close()}catch{}});
+  const wsReadyP95=percentile(wsReady,0.95);
+  const propagation=changeTimes.map(t=>t-publishStarted);
+  const wsPropP95=percentile(propagation,0.95);
+  if(wsReadyP95>=thresholdMs)throw new Error(`WebSocket ready p95 ${wsReadyP95.toFixed(1)}ms exceeds ${thresholdMs}ms`);
+  if(wsPropP95>=thresholdMs)throw new Error(`WebSocket propagation p95 ${wsPropP95.toFixed(1)}ms exceeds ${thresholdMs}ms`);
+  metrics.push({
+    name:'WebSocket subscriptions',
+    p50Ms:Number(percentile(wsReady,0.5).toFixed(1)),
+    p95Ms:Number(wsReadyP95.toFixed(1)),
+    propagationP95Ms:Number(wsPropP95.toFixed(1)),
+  });
 
   const teamCounts={
     arena:await prisma.submission.count({where:{activityId:activities.ARENA.id,ownerType:'TEAM'}}),
