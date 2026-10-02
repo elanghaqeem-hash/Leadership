@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { cookies, headers } from 'next/headers';
+import type { PrismaClient } from '@prisma/client';
 import { prisma } from '@ltw/db';
 import type { Permission, Role } from '@ltw/authz';
 import { can } from '@ltw/authz';
@@ -21,12 +22,12 @@ async function requestMeta() {
   return { ipHash: hashIp(raw), userAgent: h.get('user-agent')?.slice(0, 500) ?? null };
 }
 
-export async function createSession(userId: string) {
+export async function createSession(userId: string, db: PrismaClient = prisma) {
   const token = randomBytes(32).toString('base64url');
   const tokenHash = hashToken(token);
   const expiresAt = new Date(Date.now() + SESSION_TTL_HOURS * 60 * 60 * 1000);
   const meta = await requestMeta();
-  await prisma.authSession.create({ data: { userId, tokenHash, expiresAt, ...meta } });
+  await db.authSession.create({ data: { userId, tokenHash, expiresAt, ...meta } });
   const jar = await cookies();
   jar.set(COOKIE_NAME, token, {
     httpOnly: true,
