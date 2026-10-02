@@ -9,7 +9,7 @@ import { publishBatchEvent } from '@/lib/realtime';
 
 const schema=z.object({
   participantUserId:z.string().uuid(),
-  kind:z.enum(['D7','D14','D30']),
+  kind:z.enum(['D14','D30']),
   answers:z.array(z.string().trim().min(1).max(2000)).length(5),
   progressPct:z.number().min(0).max(100),
   day30Metrics:z.record(z.string(),z.number().finite().nullable()).optional().default({}),
