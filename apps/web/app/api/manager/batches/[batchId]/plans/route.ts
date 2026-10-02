@@ -129,9 +129,9 @@ export async function POST(req:Request,{params}:{params:Promise<{batchId:string}
       });
       for(const metric of metricRows){
         const baselineProvided=metric.code in input.baselineMetrics;
-        const baselineInput=baselineProvided?input.baselineMetrics[metric.code]:undefined;
-        const baselineValue=baselineProvided
-          ? (baselineInput===null?null:baselineInput)
+        const baselineInput=baselineProvided?(input.baselineMetrics[metric.code]??null):undefined;
+        const baselineValue:number|null=baselineProvided
+          ? baselineInput!
           : (metric.baseline===null?null:Number(metric.baseline));
 
         if(input.kind!=='D30'){
@@ -145,7 +145,7 @@ export async function POST(req:Request,{params}:{params:Promise<{batchId:string}
         }
 
         if(!(metric.code in input.day30Metrics)&&!baselineProvided)continue;
-        const day30Input=metric.code in input.day30Metrics?input.day30Metrics[metric.code]:(metric.day30===null?null:Number(metric.day30));
+        const day30Input:number|null=metric.code in input.day30Metrics?(input.day30Metrics[metric.code]??null):(metric.day30===null?null:Number(metric.day30));
         let percentChange:number|null=null;
         let improved:boolean|null=null;
         if(baselineValue!==null&&day30Input!==null){
