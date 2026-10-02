@@ -48,6 +48,12 @@ describe('critical RBAC rules', () => {
     expect(can('TEAM_MANAGE', { role: 'PARTICIPANT', ...sameScope })).toBe(false);
   });
 
+  it('Participant individual export is owner-only', () => {
+    expect(can('EXPORT_INDIVIDUAL', { role:'PARTICIPANT', ...sameScope, isOwner:true })).toBe(true);
+    expect(can('EXPORT_INDIVIDUAL', { role:'PARTICIPANT', ...sameScope, isOwner:false })).toBe(false);
+    expect(can('INDIVIDUAL_DASHBOARD_READ', { role:'PARTICIPANT', ...sameScope, isOwner:false })).toBe(false);
+  });
+
   it('Participant cannot reveal keys or control sessions', () => {
     expect(can('ANSWER_KEY_REVEAL', { role: 'PARTICIPANT', ...sameScope })).toBe(false);
     expect(can('SESSION_CONTROL', { role: 'PARTICIPANT', ...sameScope })).toBe(false);
