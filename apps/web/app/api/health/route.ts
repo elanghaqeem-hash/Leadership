@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withRequestPrisma } from '@ltw/db';
+import { BUILD_ID } from '@/lib/build-info';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +17,7 @@ export async function GET() {
         {
           ok: ready,
           service: 'leadership-that-works',
+          buildId: BUILD_ID,
           checks: { database: 'UP', programSeed: ready ? 'READY' : 'MISSING' },
           latencyMs: Date.now() - started,
           timestamp: new Date().toISOString(),
@@ -28,6 +30,7 @@ export async function GET() {
       {
         ok: false,
         service: 'leadership-that-works',
+        buildId: BUILD_ID,
         checks: { database: 'DOWN', programSeed: 'UNKNOWN' },
         latencyMs: Date.now() - started,
         timestamp: new Date().toISOString(),
