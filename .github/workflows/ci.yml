@@ -105,3 +105,6 @@ jobs:
           if [ -f /tmp/leadership-next.pid ]; then
             kill "$(cat /tmp/leadership-next.pid)" || true
           fi
+
+      - name: Cloudflare Worker build
+        run: npm run cf:build
