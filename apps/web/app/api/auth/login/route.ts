@@ -137,8 +137,9 @@ async function handleLogin(req: Request) {
 }
 
 export async function POST(req: Request) {
+  let timer: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<NextResponse>((resolve) => {
-    setTimeout(() => {
+    timer = setTimeout(() => {
       resolve(
         NextResponse.json(
           {
@@ -157,7 +158,11 @@ export async function POST(req: Request) {
     }, 9_000);
   });
 
-  const response = await Promise.race([handleLogin(req), timeout]);
-  response.headers.set('cache-control', 'no-store');
-  return response;
+  try {
+    const response = await Promise.race([handleLogin(req), timeout]);
+    response.headers.set('cache-control', 'no-store');
+    return response;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
