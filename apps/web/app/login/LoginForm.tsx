@@ -12,15 +12,28 @@ type JsonResult = {
 
 async function postJson(url: string, body: unknown, timeoutMs = 12_000): Promise<JsonResult> {
   const controller = new AbortController();
-  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+  let timer = 0;
+
+  const request = fetch(url, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'cache-control': 'no-store',
+    },
+    body: JSON.stringify(body),
+    signal: controller.signal,
+    cache: 'no-store',
+  });
+
+  const timeout = new Promise<Response>((_resolve, reject) => {
+    timer = window.setTimeout(() => {
+      controller.abort();
+      reject(new Error('LOGIN_TIMEOUT'));
+    }, timeoutMs);
+  });
+
   try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(body),
-      signal: controller.signal,
-      cache: 'no-store',
-    });
+    const response = await Promise.race([request, timeout]);
     let data: Record<string, any> = {};
     try {
       data = await response.json();
@@ -29,12 +42,15 @@ async function postJson(url: string, body: unknown, timeoutMs = 12_000): Promise
     }
     return { response, data };
   } catch (error) {
-    if (error instanceof DOMException && error.name === 'AbortError') {
-      throw new Error('Server belum merespons. Periksa koneksi/database lalu coba lagi.');
+    if (
+      (error instanceof Error && error.message === 'LOGIN_TIMEOUT') ||
+      (error instanceof DOMException && error.name === 'AbortError')
+    ) {
+      throw new Error('Layanan login tidak merespons dalam 12 detik. Coba lagi atau periksa koneksi database.');
     }
     throw new Error('Tidak dapat terhubung ke layanan login. Silakan coba lagi.');
   } finally {
-    window.clearTimeout(timer);
+    if (timer) window.clearTimeout(timer);
   }
 }
 
