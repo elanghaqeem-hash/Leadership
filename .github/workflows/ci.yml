@@ -108,3 +108,22 @@ jobs:
 
       - name: Cloudflare Worker build
         run: npm run cf:build
+
+
+  cloudflare-parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: postgresql://app_user:change-me@localhost:5432/leadership?schema=public
+      APP_URL: https://leadership.invalid
+      APP_SECRET: ci-only-app-secret-at-least-32-bytes-long
+      MFA_ENCRYPTION_KEY: ci-only-mfa-encryption-key-at-least-32-bytes
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Cloudflare-style install
+        run: npm clean-install --progress=false
+      - name: Cloudflare Worker build
+        run: npm run cf:build
