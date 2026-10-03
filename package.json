@@ -39,6 +39,7 @@
     "csv-parse": "^7.0.3",
     "exceljs": "^4.4.0",
     "jose": "^6.1.0",
+    "pg-cloudflare": "1.4.1",
     "zod": "^4.1.11"
   },
   "devDependencies": {
