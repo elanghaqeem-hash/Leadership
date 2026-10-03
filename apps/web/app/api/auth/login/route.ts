@@ -14,7 +14,7 @@ const schema = z.object({
   password: z.string().min(8),
 });
 
-export async function POST(req: Request) {
+async function handleLogin(req: Request) {
   return withRequestPrisma(async (db) => {
     try {
       const input = schema.parse(await req.json());
@@ -134,4 +134,30 @@ export async function POST(req: Request) {
       return jsonError(error);
     }
   }).catch((error) => jsonError(error));
+}
+
+export async function POST(req: Request) {
+  const timeout = new Promise<NextResponse>((resolve) => {
+    setTimeout(() => {
+      resolve(
+        NextResponse.json(
+          {
+            error: 'AUTH_BACKEND_TIMEOUT',
+            message: 'Layanan autentikasi belum merespons. Coba lagi beberapa saat.',
+          },
+          {
+            status: 503,
+            headers: {
+              'cache-control': 'no-store',
+              'retry-after': '5',
+            },
+          },
+        ),
+      );
+    }, 9_000);
+  });
+
+  const response = await Promise.race([handleLogin(req), timeout]);
+  response.headers.set('cache-control', 'no-store');
+  return response;
 }
