@@ -3,6 +3,8 @@ import { getCurrentUser, getUserAccessSnapshot } from '@/lib/auth';
 import { Shell } from '@/components/Shell';
 import BatchFormClient from './BatchFormClient';
 
+export const dynamic = 'force-dynamic';
+
 export default async function Page(){
   const user=await getCurrentUser();
   if(!user)redirect('/login');
