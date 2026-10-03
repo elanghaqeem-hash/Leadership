@@ -1,9 +1,19 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 type MfaMode = 'enroll' | 'verify' | null;
+type BackendStatus = 'checking' | 'ready' | 'degraded' | 'offline';
+
+type HealthResult = {
+  ok?: boolean;
+  buildId?: string;
+  checks?: {
+    database?: string;
+    programSeed?: string;
+  };
+};
 
 type JsonResult = {
   response: Response;
@@ -62,6 +72,49 @@ export default function LoginForm() {
   const [challengeToken, setChallengeToken] = useState('');
   const [secret, setSecret] = useState('');
   const [otpauthUri, setOtpauthUri] = useState('');
+  const [backendStatus, setBackendStatus] = useState<BackendStatus>('checking');
+  const [backendMessage, setBackendMessage] = useState('Memeriksa layanan…');
+  const [backendBuild, setBackendBuild] = useState('');
+
+  const checkBackend = useCallback(async () => {
+    setBackendStatus('checking');
+    setBackendMessage('Memeriksa layanan…');
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), 5_000);
+    try {
+      const response = await fetch('/api/health?ts=' + Date.now(), {
+        cache: 'no-store',
+        headers: { 'cache-control': 'no-store' },
+        signal: controller.signal,
+      });
+      const data = (await response.json().catch(() => ({}))) as HealthResult;
+      setBackendBuild(String(data.buildId || ''));
+
+      if (data.checks?.database === 'UP') {
+        if (data.ok) {
+          setBackendStatus('ready');
+          setBackendMessage('Layanan siap');
+        } else {
+          setBackendStatus('degraded');
+          setBackendMessage('Database aktif, data program belum siap');
+        }
+        return;
+      }
+
+      setBackendStatus('offline');
+      setBackendMessage('Database belum terhubung');
+    } catch {
+      setBackendStatus('offline');
+      setBackendMessage('Backend tidak merespons');
+    } finally {
+      window.clearTimeout(timer);
+    }
+  }, []);
+
+  useEffect(() => {
+    void checkBackend();
+  }, [checkBackend]);
 
   async function finishLogin() {
     router.replace('/dashboard');
@@ -192,8 +245,31 @@ export default function LoginForm() {
     );
   }
 
+  const statusClass =
+    backendStatus === 'ready'
+      ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+      : backendStatus === 'degraded'
+        ? 'border-amber-200 bg-amber-50 text-amber-800'
+        : backendStatus === 'offline'
+          ? 'border-red-200 bg-red-50 text-red-700'
+          : 'border-slate-200 bg-slate-50 text-slate-600';
+
   return (
     <form onSubmit={submitPassword} className="space-y-4" aria-busy={loading}>
+      <div className={`flex items-center justify-between gap-3 rounded-xl border px-3 py-2 text-xs ${statusClass}`}>
+        <div>
+          <div className="font-semibold">{backendMessage}</div>
+          {backendBuild && <div className="mt-0.5 font-mono text-[10px] opacity-75">{backendBuild}</div>}
+        </div>
+        <button
+          type="button"
+          onClick={() => void checkBackend()}
+          disabled={backendStatus === 'checking' || loading}
+          className="shrink-0 rounded-lg border border-current/20 px-2 py-1 font-semibold disabled:opacity-50"
+        >
+          {backendStatus === 'checking' ? 'Cek…' : 'Cek ulang'}
+        </button>
+      </div>
       <label className="block">
         <span className="mb-1 block text-sm font-medium">Email</span>
         <input name="email" type="email" required autoComplete="email" disabled={loading} className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 disabled:bg-slate-50" />
