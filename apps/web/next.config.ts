@@ -42,7 +42,22 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   experimental: { serverActions: { bodySizeLimit: '2mb' } },
   async headers(){
-    return[{source:'/:path*',headers:securityHeaders}];
+    return[
+      {
+        source:'/login',
+        headers:[
+          {key:'Cache-Control',value:'no-store, no-cache, must-revalidate, max-age=0'},
+          {key:'Pragma',value:'no-cache'},
+        ],
+      },
+      {
+        source:'/api/auth/:path*',
+        headers:[
+          {key:'Cache-Control',value:'no-store, no-cache, must-revalidate, max-age=0'},
+        ],
+      },
+      {source:'/:path*',headers:securityHeaders},
+    ];
   },
 };
 export default nextConfig;
