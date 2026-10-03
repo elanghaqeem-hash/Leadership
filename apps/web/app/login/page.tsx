@@ -9,7 +9,10 @@ export default function LoginPage(){
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-slate-50 to-slate-100 px-4 py-8">
       <section className="w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl shadow-slate-200/60">
         <div className="bg-navy px-6 py-7 text-white">
-          <div className="text-xs font-bold uppercase tracking-[.2em] text-amber-300">Leadership That Works</div>
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-xs font-bold uppercase tracking-[.2em] text-amber-300">Leadership That Works</div>
+            <div className="rounded-full border border-white/20 bg-white/10 px-2.5 py-1 font-mono text-[10px] text-slate-200">{BUILD_ID}</div>
+          </div>
           <h1 className="mt-3 text-3xl font-semibold">Training Delivery & Impact Platform</h1>
           <p className="mt-2 text-sm leading-6 text-slate-300">Lead Yourself. Think Better. Decide Smarter. Execute Stronger.</p>
         </div>
