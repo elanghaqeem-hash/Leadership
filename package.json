@@ -33,8 +33,8 @@
     "cf:build": "npx prisma generate --no-engine && cd apps/web && npx --yes @opennextjs/cloudflare@1.20.7 build --config ../../wrangler.jsonc"
   },
   "dependencies": {
-    "@prisma/adapter-pg": "6.19.0",
-    "@prisma/client": "6.19.0",
+    "@prisma/adapter-pg": "6.19.3",
+    "@prisma/client": "6.19.3",
     "argon2": "^0.44.0",
     "csv-parse": "^7.0.3",
     "exceljs": "^4.4.0",
@@ -45,7 +45,7 @@
     "@types/node": "^22.15.0",
     "@types/pg": "^8.15.5",
     "pg": "8.23.1",
-    "prisma": "6.19.0",
+    "prisma": "6.19.3",
     "tsx": "^4.20.6",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
@@ -54,7 +54,8 @@
     "seed": "tsx prisma/seed.ts"
   },
   "overrides": {
-    "uuid": "^11.1.1"
+    "uuid": "^11.1.1",
+    "deepmerge-ts": "^8.0.2"
   },
   "allowScripts": {
     "@prisma/client": true,
