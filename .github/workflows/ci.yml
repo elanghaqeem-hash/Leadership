@@ -114,7 +114,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      DATABASE_URL: postgresql://app_user:change-me@localhost:5432/leadership?schema=public
       APP_URL: https://leadership.invalid
       APP_SECRET: ci-only-app-secret-at-least-32-bytes-long
       MFA_ENCRYPTION_KEY: ci-only-mfa-encryption-key-at-least-32-bytes
