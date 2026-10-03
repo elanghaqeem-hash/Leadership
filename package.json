@@ -33,7 +33,8 @@
     "cf:build": "npm run db:generate && cd apps/web && npx --yes @opennextjs/cloudflare@1.20.7 build --config ../../wrangler.jsonc"
   },
   "dependencies": {
-    "@prisma/client": "6.12.0",
+    "@prisma/adapter-pg": "6.19.0",
+    "@prisma/client": "6.19.0",
     "argon2": "^0.44.0",
     "csv-parse": "^7.0.3",
     "exceljs": "^4.4.0",
@@ -42,12 +43,12 @@
   },
   "devDependencies": {
     "@types/node": "^22.15.0",
-    "prisma": "6.12.0",
+    "@types/pg": "^8.15.5",
+    "pg": "8.23.1",
+    "prisma": "6.19.0",
     "tsx": "^4.20.6",
     "typescript": "^5.9.2",
-    "vitest": "^3.2.4",
-    "pg": "^8.16.3",
-    "@types/pg": "^8.15.5"
+    "vitest": "^3.2.4"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
