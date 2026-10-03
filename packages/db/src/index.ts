@@ -11,9 +11,11 @@ function databaseUrl(): string {
   return value;
 }
 
-function createPrismaClient(): PrismaClient {
+function createPrismaClient(requestScoped = false): PrismaClient {
   const adapter = new PrismaPg({
     connectionString: databaseUrl(),
+    connectionTimeoutMillis: 5_000,
+    max: requestScoped ? 1 : 10,
   });
 
   return new PrismaClient({
@@ -72,7 +74,7 @@ export async function withRequestPrisma<T>(
     return fn(prisma);
   }
 
-  const db = createPrismaClient();
+  const db = createPrismaClient(true);
   try {
     return await fn(db);
   } finally {
