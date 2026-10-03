@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next';
+import path from 'node:path';
 
 const isProd=process.env.NODE_ENV==='production';
 const csp=[
@@ -27,6 +28,16 @@ const securityHeaders=[
 ];
 
 const nextConfig: NextConfig = {
+  // OpenNext/@vercel-nft currently misses the workerd-conditioned files from
+  // pg-cloudflare. Trace from the monorepo root and force those runtime files
+  // into every server trace used by the Cloudflare bundle.
+  outputFileTracingRoot: path.resolve(process.cwd(), '../..'),
+  outputFileTracingIncludes: {
+    '/*': [
+      '../../node_modules/pg-cloudflare/dist/**',
+      '../../node_modules/pg-cloudflare/esm/**',
+    ],
+  },
   transpilePackages: ['@ltw/authz', '@ltw/db', '@ltw/imports', '@ltw/scoring'],
   poweredByHeader: false,
   experimental: { serverActions: { bodySizeLimit: '2mb' } },
